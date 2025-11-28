@@ -1,4 +1,4 @@
-jest.mock("../../src/services/authService", () => ({
+jest.mock("../../services/authService", () => ({
   registerUser: jest.fn(async (email: string) => ({ id: "u-1", email })),
   login: jest.fn(async (email: string) => ({
     token: "t",
@@ -8,7 +8,7 @@ jest.mock("../../src/services/authService", () => ({
 }));
 
 // Mock auth middleware to set a fake user
-jest.mock("../../src/middleware/auth", () => ({
+jest.mock("../../middleware/auth", () => ({
   isAuthenticated: (req: any, res: any, next: any) => {
     req.user = { id: "u-1", role: "ADMIN" };
     next();
@@ -17,7 +17,7 @@ jest.mock("../../src/middleware/auth", () => ({
 }));
 
 import request from "supertest";
-import app from "../../src/testApp";
+import app from "../../testApp";
 
 describe("Auth Routes (unit)", () => {
   test("POST /api/auth/register returns 201", async () => {

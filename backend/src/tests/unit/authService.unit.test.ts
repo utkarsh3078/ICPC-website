@@ -1,4 +1,4 @@
-jest.mock("../../src/models/prismaClient", () => ({
+jest.mock("../../models/prismaClient", () => ({
   __esModule: true,
   default: {
     user: {
@@ -21,7 +21,7 @@ jest.mock("../../src/models/prismaClient", () => ({
   },
 }));
 
-import * as authService from "../../src/services/authService";
+import * as authService from "../../services/authService";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 

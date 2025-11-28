@@ -2,7 +2,7 @@ import MockAdapter from "axios-mock-adapter";
 import axios from "axios";
 
 // Mock the prisma client module
-jest.mock("../../src/models/prismaClient", () => {
+jest.mock("../../models/prismaClient", () => {
   return {
     __esModule: true,
     default: {
@@ -31,7 +31,7 @@ jest.mock("../../src/models/prismaClient", () => {
   };
 });
 
-jest.mock("../../src/services/judgeService", () => ({
+jest.mock("../../services/judgeService", () => ({
   submitToJudge0: jest.fn(async () => ({ token: "fake-token" })),
   getJudge0Result: jest.fn(async () => ({
     status: { id: 3, description: "Accepted" },
@@ -39,8 +39,8 @@ jest.mock("../../src/services/judgeService", () => ({
   })),
 }));
 
-import * as contestJudge from "../../src/services/contestJudgeService";
-import prisma from "../../src/models/prismaClient";
+import * as contestJudge from "../../services/contestJudgeService";
+import prisma from "../../models/prismaClient";
 
 describe("ContestJudgeService (unit - mocked prisma & judge)", () => {
   let mock: MockAdapter;

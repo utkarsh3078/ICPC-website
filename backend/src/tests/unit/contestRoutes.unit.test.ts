@@ -1,4 +1,4 @@
-jest.mock("../../src/services/contestService", () => ({
+jest.mock("../../services/contestService", () => ({
   createContest: jest.fn(async (data: any) => ({ id: "c-1", ...data })),
   addProblem: jest.fn(async (id: string, p: any) => ({ id, problems: [p] })),
   getContestSubmissions: jest.fn(async (id: string) => []),
@@ -10,7 +10,7 @@ jest.mock("../../src/services/contestService", () => ({
   })),
 }));
 
-jest.mock("../../src/middleware/auth", () => ({
+jest.mock("../../middleware/auth", () => ({
   isAuthenticated: (req: any, res: any, next: any) => {
     req.user = { id: "u-1", role: "ADMIN" };
     next();
@@ -19,7 +19,7 @@ jest.mock("../../src/middleware/auth", () => ({
 }));
 
 import request from "supertest";
-import app from "../../src/testApp";
+import app from "../../testApp";
 
 describe("Contest Routes (unit)", () => {
   test("POST /api/contests (admin) creates contest", async () => {

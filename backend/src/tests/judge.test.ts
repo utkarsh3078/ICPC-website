@@ -1,6 +1,6 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
-import { submitToJudge0, getJudge0Result } from "../src/services/judgeService";
+import { submitToJudge0, getJudge0Result } from "../services/judgeService";
 
 describe("Judge0 service", () => {
   const mock = new MockAdapter(axios);

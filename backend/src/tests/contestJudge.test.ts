@@ -1,8 +1,8 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
-import prisma from "../src/models/prismaClient";
-import * as judge from "../src/services/judgeService";
-import * as contestJudge from "../src/services/contestJudgeService";
+import prisma from "../models/prismaClient";
+import * as judge from "../services/judgeService";
+import * as contestJudge from "../services/contestJudgeService";
 
 // Note: these tests interact with the database defined in backend/.env.
 // Ensure the DB is running and migrations have been applied before running tests.

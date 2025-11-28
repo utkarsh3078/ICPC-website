@@ -120,6 +120,21 @@ This project integrates with Judge0 for executing code submissions. Configure th
 
 The backend normalizes Judge0 responses and includes a poller to update submission statuses.
 
+Judge0 integration test notes:
+
+- The optional Judge0 integration test `src/tests/integration/judge0.e2e.test.ts` will only run when a Judge0 endpoint is configured. The test will be skipped if `JUDGE0_URL` or `JUDGE0_KEY` are not set, or if `SKIP_JUDGE0=true`.
+- If your local Judge0 instance or proxy requires no external auth but your routes require authentication, set `SKIP_AUTH=true` when running integration tests so the test app can call `/api/judge` without a token.
+
+PowerShell examples:
+
+```powershell
+# Run integration tests with SKIP_AUTH so judge routes don't require a JWT
+$env:SKIP_AUTH = 'true'; npm run test:integration
+
+# Run only the Judge0 integration test with Judge0 env configured
+$env:JUDGE0_URL = 'https://judge0.example.com'; $env:JUDGE0_KEY = 'your-key'; npm run test:integration:judge0
+```
+
 ## Testing
 
 Unit tests mock Prisma and external services so they run without a DB. Integration tests expect a configured test database (`.env.test`).

@@ -36,13 +36,13 @@
     "helmet": "^7.0.0",
     "joi": "^17.9.0",
     "jsonwebtoken": "^9.0.0",
-    "node-cron": "^3.0.2",
+    "node-cron": "^3.0.3",
     "openai": "^4.9.0",
     "pg": "^8.11.0",
     "pg-hstore": "^2.3.4",
-    "swagger-ui-express": "^4.6.3",
     "pino": "^8.13.0",
-    "pino-http": "^8.0.0"
+    "pino-http": "^8.0.0",
+    "swagger-ui-express": "^4.6.3"
   },
   "optionalDependencies": {
     "rotating-file-stream": "^3.0.4"
@@ -54,6 +54,7 @@
     "@types/jest": "^29.5.3",
     "@types/jsonwebtoken": "^9.0.2",
     "@types/node": "^24.9.1",
+    "@types/node-cron": "^3.0.11",
     "@types/supertest": "^2.0.12",
     "@types/swagger-ui-express": "^4.1.8",
     "axios-mock-adapter": "^1.21.2",

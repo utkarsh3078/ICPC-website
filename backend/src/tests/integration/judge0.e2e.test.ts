@@ -1,12 +1,14 @@
 import request from "supertest";
-import app from "../../src/testApp";
+import app from "../../testApp";
 
-// This test only runs when JUDGE0_URL is set in environment
+// This test runs only when a real Judge0 endpoint is configured and SKIP_JUDGE0 is not set.
 const judge0Url = process.env.JUDGE0_URL;
+const judge0Key = process.env.JUDGE0_KEY;
+const skipJudge0 = process.env.SKIP_JUDGE0 === "true";
 
 describe("Judge0 E2E (integration - optional)", () => {
-  if (!judge0Url) {
-    test("skipped - JUDGE0_URL not set", () => {
+  if (!judge0Url || skipJudge0 || !judge0Key) {
+    test("skipped - JUDGE0_URL not set or SKIP_JUDGE0=true", () => {
       expect(true).toBe(true);
     });
     return;
