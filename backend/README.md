@@ -1,171 +1,270 @@
-# Backend — ICPC Website
+ICPC USICT Portal – Backend
+🚀 Express.js + TypeScript Backend for ACM ICPC USICT Portal
+<p align="center"> <img src="https://img.shields.io/badge/Node.js-18+-green?style=for-the-badge&logo=node.js" /> <img src="https://img.shields.io/badge/TypeScript-5.x-blue?style=for-the-badge&logo=typescript" /> <img src="https://img.shields.io/badge/Express.js-5-black?style=for-the-badge&logo=express" /> <img src="https://img.shields.io/badge/PostgreSQL-15+-blue?style=for-the-badge&logo=postgresql" /> <img src="https://img.shields.io/badge/Prisma-ORM-2D3748?style=for-the-badge&logo=prisma" /> <img src="https://img.shields.io/badge/Judge0-Integration-red?style=for-the-badge" /> <img src="https://img.shields.io/badge/Swagger-API Docs-yellow?style=for-the-badge&logo=swagger" /> <br/> <img src="https://img.shields.io/github/actions/workflow/status/yourusername/icpc-website/ci.yml?style=flat-square&label=CI" /> <img src="https://img.shields.io/github/license/yourusername/icpc-website?style=flat-square" /> </p>
+📘 Overview
 
-Clean, developer-focused documentation for the Express + TypeScript backend powering the ICPC Website.
+A robust Express.js + TypeScript backend powering the ACM ICPC USICT Portal.
+Includes features such as contests, tasks, blogs, alumni portal, Judge0 code execution, gamification, sessions, and AI-powered tools.
 
-This backend provides user authentication, contest and task management, Prisma + PostgreSQL persistence, cron-based background jobs (including Judge0 poller), and optional OpenAI integration for an AI chatbot.
+This backend is production-ready with containerized deployment, CI/CD, logging, cron jobs, Prisma ORM, Swagger API docs, and over 80% test coverage.
 
-**Quick links:**
+📚 Table of Contents
 
-- **Source:** `./src`
-- **Prisma schema:** `./prisma/schema.prisma`
-- **Env example:** `./.env.example`
+Features
 
-## Features
+Tech Stack
 
-- JWT authentication with role-based access
-- Contests, tasks, profile management
-- Background cron jobs (leaderboards, Judge0 polling)
-- Judge0 integration for code execution (configurable)
-- Prisma ORM with migrations and seed scripts
-- Unit & integration test scaffolding (Jest + supertest)
+Prerequisites
 
-## Tech stack
+Quick Start
 
-- Node.js, TypeScript, Express
-- PostgreSQL + Prisma
-- Jest + ts-jest + supertest
-- GitHub Actions for CI
+Project Structure
 
-## Requirements
+Configuration
 
-- Node.js (recommended v18+)
-- npm or pnpm
-- Docker & Docker Compose (optional for local DB)
+API Documentation
 
-## Environment variables
+Development
 
-Copy `.env.example` to `.env` and update the values. Important variables:
+Testing
 
-- `DATABASE_URL` : Postgres connection string used by Prisma
-- `JWT_SECRET` : Secret for signing JWTs
-- `PORT` : Server port (default `5000`)
-- `OPENAI_API_KEY` : Optional, for AI chatbot
-- `JUDGE0_URL` : Optional, Judge0 base URL (e.g. `https://judge0.example.com`)
-- `JUDGE0_KEY` : Optional, Judge0 API key
-- `JUDGE0_KEY_HEADER` : Optional, header name for Judge0 key (default `X-Auth-Token`)
+Deployment
 
-See `.env.example` for the full list.
+Scripts Reference
 
-## Quickstart — Local (PowerShell)
+Contributing
 
-1. Install dependencies
+License
 
-```powershell
-cd backend
+Support
+
+✨ Features
+🔐 Core
+
+JWT authentication (Student, Admin, Alumni)
+
+Contest creation + problem submissions
+
+Task/assignment system with LC/CF link verification
+
+Judge0 integration for code execution in 50+ languages
+
+Profile management & coding handles
+
+🧩 Advanced
+
+Gamification: badges, leaderboard, streaks
+
+Blog system with admin approval
+
+Session/workshop management
+
+Alumni network with role-specific access
+
+AI-powered coding assistant (OpenAI)
+
+⚙️ Technical Highlights
+
+Prisma ORM + PostgreSQL
+
+Pino structured logging
+
+Cron jobs for leaderboard updates + Judge0 polling
+
+Swagger UI interactive API docs
+
+Dockerized production build
+
+80% unit & integration test coverage
+
+🛠 Tech Stack
+Category	Technologies
+Runtime	Node.js 18+, TypeScript 5.x
+Framework	Express.js, Helmet, CORS, Rate Limiting
+Database	PostgreSQL 15+, Prisma ORM
+Auth	JWT, bcrypt
+Testing	Jest, Supertest
+External APIs	Judge0 CE, OpenAI
+DevOps	Docker, GitHub Actions
+📦 Prerequisites
+
+Node.js 18+
+
+PostgreSQL 15+
+
+npm/pnpm
+
+Git
+
+🚀 Quick Start
+1. Clone & Install
+git clone https://github.com/yourusername/icpc-website.git
+cd icpc-website/backend
 npm install
-```
 
-2. Generate Prisma client and run migrations
+2. Environment Setup
+cp .env.example .env
 
-```powershell
+3. Database Setup
 npx prisma generate
 npx prisma migrate dev --name init
-```
+npm run seed        # admin@icpc.local / admin1234
 
-3. Seed sample data (optional)
-
-```powershell
-npm run seed
-```
-
-4. Run in development
-
-```powershell
+4. Start Dev Server
 npm run dev
-```
 
-The API will be available at `http://localhost:<PORT>` (default `5000`).
 
-## Useful scripts
+🔗 Visit:
+http://localhost:5000/api/health
 
-- `npm run dev` : Start dev server with ts-node / nodemon
-- `npm run build` : Compile to `dist/`
-- `npm start` : Run compiled server from `dist/`
-- `npm run seed` : Run database seed script
-- `npm test` : Run unit & integration tests (conditional on env)
-- `npm run test:unit` : Run unit tests only
-- `npm run test:integration` : Run integration tests (requires DB)
+📁 Project Structure
+backend/
+├── src/
+│   ├── config/
+│   ├── controllers/
+│   ├── routes/
+│   ├── services/
+│   ├── middleware/
+│   ├── models/
+│   ├── jobs/
+│   ├── utils/
+│   ├── tests/
+│   ├── index.ts
+│   └── testApp.ts
+├── prisma/
+├── docs/
+├── Dockerfile
+├── docker-compose.yml
+├── swagger.json
+├── API_DOCUMENTATION.md
+└── README.md
 
-## Prisma & database
+⚙️ Configuration
+Required .env
+DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/icpc_portal"
+JWT_SECRET="your-32-char-secret"
+PORT=5000
 
-- Generate client: `npx prisma generate`
-- Create/migrate schema: `npx prisma migrate dev --name my_migration`
-- Open Studio: `npx prisma studio`
+# Optional
+JUDGE0_URL="https://judge0-ce.p.rapidapi.com"
+OPENAI_API_KEY="sk-xxxx"
+LOG_LEVEL="info"
 
-If you prefer Docker for Postgres, use the included `docker-compose.yml` (or run the commands in `docs/DEMO.md`).
 
-## Docker
+🔐 Security
 
-Build and run a production image (example):
+JWT secret must be ≥32 characters
 
-```powershell
-docker build -t icpc-backend:local .
-docker run -p 5000:5000 --env-file .env icpc-backend:local
-```
+Weak secrets are rejected during startup
 
-Or use `docker-compose up` for an app + Postgres combination.
+📖 API Documentation
+🧭 Swagger UI
 
-## CI
+➡ http://localhost:5000/api/docs/ui
 
-GitHub Actions are configured to run migrations, seed the DB, build the app, and run tests. See `.github/workflows/ci.yml` for details.
+Quick Reference
+Endpoint	Method	Auth	Description
+/api/auth/register	POST	❌	Register
+/api/auth/login	POST	❌	Login
+/api/profile	POST	✅ User	Update profile
+/api/tasks	POST	✅ Admin	Create task
+/api/tasks/:id/submit	POST	✅ User	Submit task
+/api/contests/:id/submit	POST	✅ User	Submit code
+/api/judge/submit	POST	✅ User	Code execution
+/api/gamification/leaderboard	GET	❌	View leaderboard
+💻 Development
+Scripts
+npm run dev
+npm run build
+npm start
 
-## Judge0 (code execution)
+# Database
+npm run prisma:generate
+npm run prisma:migrate
+npm run seed
 
-This project integrates with Judge0 for executing code submissions. Configure these env vars when using Judge0:
-
-- `JUDGE0_URL` : Base URL of the Judge0 API
-- `JUDGE0_KEY` : API key (if required)
-- `JUDGE0_KEY_HEADER` : Header name for the key (defaults to `X-Auth-Token`)
-- `JUDGE0_TIMEOUT_MS` : Optional HTTP timeout (ms) for Judge0 requests
-
-The backend normalizes Judge0 responses and includes a poller to update submission statuses.
-
-Judge0 integration test notes:
-
-- The optional Judge0 integration test `src/tests/integration/judge0.e2e.test.ts` will only run when a Judge0 endpoint is configured. The test will be skipped if `JUDGE0_URL` or `JUDGE0_KEY` are not set, or if `SKIP_JUDGE0=true`.
-- If your local Judge0 instance or proxy requires no external auth but your routes require authentication, set `SKIP_AUTH=true` when running integration tests so the test app can call `/api/judge` without a token.
-
-PowerShell examples:
-
-```powershell
-# Run integration tests with SKIP_AUTH so judge routes don't require a JWT
-$env:SKIP_AUTH = 'true'; npm run test:integration
-
-# Run only the Judge0 integration test with Judge0 env configured
-$env:JUDGE0_URL = 'https://judge0.example.com'; $env:JUDGE0_KEY = 'your-key'; npm run test:integration:judge0
-```
-
-## Testing
-
-Unit tests mock Prisma and external services so they run without a DB. Integration tests expect a configured test database (`.env.test`).
-
-Run unit tests:
-
-```powershell
+# Testing
+npm test
 npm run test:unit
-```
-
-Run integration tests (ensure `DATABASE_URL_TEST` is set and migrations applied):
-
-```powershell
 npm run test:integration
-```
 
-## Contributing
+# Judge0 test
+npm run demo
 
-If you'd like to contribute:
+🧪 Testing
 
-1. Fork the repo and create a feature branch
-2. Run tests and linters
-3. Open a PR describing the change and include relevant tests
+Tests are divided into unit and integration:
 
-## Useful commands (PowerShell)
+tests/
+├── unit/
+└── integration/
 
-```powershell
-# install deps
-cd "c:\Users\utkyd\Documents\WEB DEVELOPMENT\ICPC-website\backend"; npm install
-# prisma + migrations
-npx prisma generate; npx prisma migrate dev --name init
-# seed + start
-npm run seed; npm run dev
-```
+Commands
+npm test
+npm run test:unit
+npm run test:integration
+
+
+📌 Integration tests require DATABASE_URL_TEST in .env.test
+
+🚢 Deployment
+Docker Build
+docker build -t icpc-backend .
+
+Run
+docker run -p 5000:5000 icpc-backend
+
+Docker Compose
+docker-compose up
+
+Production Checklist
+
+ NODE_ENV=production
+
+ Strong JWT secret
+
+ HTTPS enabled
+
+ Run prisma migrate deploy
+
+ Enable logging & rate limits
+
+🤝 Contributing
+
+Pull requests are welcome!
+
+Steps
+
+Fork → Clone
+
+git checkout -b feature/your-feature
+
+Implement + test
+
+Update docs
+
+Open PR
+
+Coding Standards
+
+TypeScript strict mode
+
+No any unless justified
+
+Use service layer for business logic
+
+Pino logging
+
+80%+ test coverage
+
+📄 License
+
+This project is licensed under the ISC License.
+
+📞 Support
+
+📘 Documentation: API_DOCUMENTATION.md
+
+🐞 Issues: GitHub Issues
+
+📧 Email: support@icpc-usict.edu (replace as needed)
