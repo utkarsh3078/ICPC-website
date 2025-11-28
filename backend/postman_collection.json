@@ -1,0 +1,105 @@
+{
+  "info": {
+    "name": "ICPC Portal Backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/health",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api","health"]
+        }
+      }
+    },
+    {
+      "name": "Register",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"}],
+        "body": {"mode":"raw","raw":"{\"email\":\"student@example.com\",\"password\":\"pass123\"}"},
+        "url": {"raw":"http://localhost:5000/api/auth/register","protocol":"http","host":["localhost"],"port":"5000","path":["api","auth","register"]}
+      }
+    }
+    ,
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"}],
+        "body": {"mode":"raw","raw":"{\"email\":\"student@example.com\",\"password\":\"pass123\"}"},
+        "url": {"raw":"http://localhost:5000/api/auth/login","protocol":"http","host":["localhost"],"port":"5000","path":["api","auth","login"]}
+      }
+    },
+    {
+      "name": "Get Leaderboard",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {"raw":"http://localhost:5000/api/gamification/leaderboard","protocol":"http","host":["localhost"],"port":"5000","path":["api","gamification","leaderboard"]}
+      }
+    }
+    ,
+    {
+      "name": "Create Profile",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"},{"key":"Authorization","value":"Bearer {{token}}"}],
+        "body": {"mode":"raw","raw":"{\"name\":\"Utkarsh\",\"branch\":\"CSE\",\"year\":3}"},
+        "url": {"raw":"http://localhost:5000/api/profile","protocol":"http","host":["localhost"],"port":"5000","path":["api","profile"]}
+      }
+    },
+    {
+      "name": "Create Task (admin)",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"},{"key":"Authorization","value":"Bearer {{admin_token}}"}],
+        "body": {"mode":"raw","raw":"{\"title\":\"Solve X\",\"description\":\"Do problem X\",\"points\":10}"},
+        "url": {"raw":"http://localhost:5000/api/tasks","protocol":"http","host":["localhost"],"port":"5000","path":["api","tasks"]}
+      }
+    }
+    ,
+    {
+      "name": "Submit Task",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"},{"key":"Authorization","value":"Bearer {{token}}"}],
+        "body": {"mode":"raw","raw":"{\"link\":\"https://leetcode.com/problems/1\"}"},
+        "url": {"raw":"http://localhost:5000/api/tasks/{{taskId}}/submit","protocol":"http","host":["localhost"],"port":"5000","path":["api","tasks","{{taskId}}","submit"]}
+      }
+    },
+    {
+      "name": "Create Contest",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"},{"key":"Authorization","value":"Bearer {{admin_token}}"}],
+        "body": {"mode":"raw","raw":"{\"title\":\"Weekly Contest\",\"timer\":3600}"},
+        "url": {"raw":"http://localhost:5000/api/contests","protocol":"http","host":["localhost"],"port":"5000","path":["api","contests"]}
+      }
+    },
+    {
+      "name": "Create Session",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"},{"key":"Authorization","value":"Bearer {{admin_token}}"}],
+        "body": {"mode":"raw","raw":"{\"title\":\"DSA Workshop\",\"date\":\"2025-12-01T18:00:00Z\"}"},
+        "url": {"raw":"http://localhost:5000/api/sessions","protocol":"http","host":["localhost"],"port":"5000","path":["api","sessions"]}
+      }
+    },
+    {
+      "name": "AI Chat",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"},{"key":"Authorization","value":"Bearer {{token}}"}],
+        "body": {"mode":"raw","raw":"{\"prompt\":\"How to prepare for ICPC?\"}"},
+        "url": {"raw":"http://localhost:5000/api/ai/chat","protocol":"http","host":["localhost"],"port":"5000","path":["api","ai","chat"]}
+      }
+    }
+  ]
+}

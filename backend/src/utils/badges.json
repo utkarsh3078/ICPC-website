@@ -1,0 +1,20 @@
+[
+  {
+    "id": "first_submit",
+    "title": "First Submission",
+    "description": "Awarded for making your first verified submission",
+    "rule": { "type": "submission_count", "min": 1 }
+  },
+  {
+    "id": "consistent_week",
+    "title": "1-Week Streak",
+    "description": "Complete at least one verified submission each day for 7 consecutive days",
+    "rule": { "type": "streak_days", "days": 7 }
+  },
+  {
+    "id": "top_month",
+    "title": "Top Performer (Month)",
+    "description": "Top of the leaderboard for the month",
+    "rule": { "type": "leaderboard_position", "period": "month", "position": 1 }
+  }
+]
