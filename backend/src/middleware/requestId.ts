@@ -1,10 +1,18 @@
 import { Request, Response, NextFunction } from 'express';
+import { randomUUID } from 'crypto';
 
+/**
+ * Adds a unique request ID to each request for tracing
+ */
 export const requestId = (req: Request, res: Response, next: NextFunction) => {
-  const id = (req.headers['x-request-id'] as string) || (globalThis as any).crypto?.randomUUID?.() || String(Date.now());
+  const id = req.headers['x-request-id'] as string || randomUUID();
+  
+  // Attach to request
+  (req as any).id = id;
+  
+  // Add to response headers
   res.setHeader('X-Request-Id', id);
-  // attach to res.locals for handlers/logging
-  res.locals.requestId = id;
+  
   next();
 };
 
