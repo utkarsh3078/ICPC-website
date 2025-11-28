@@ -1,18 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
 import { validationResult } from 'express-validator';
-import { ValidationError } from '../utils/AppError';
+import { ValidationError } from '../utils/customErrors';
 
 /**
- * Middleware to check results of express-validator chains.
- * Usage: add validator chains on route, then `validate` to short-circuit on errors.
+ * Middleware to check validation results from express-validator
+ * Throws ValidationError (422) if validation fails
  */
 export const validate = (req: Request, res: Response, next: NextFunction) => {
   const errors = validationResult(req);
+  
   if (!errors.isEmpty()) {
-    const message = errors.array().map((e) => e.msg).join(', ');
-    return next(new ValidationError(message));
+    const errorMessages = errors.array().map(err => err.msg).join(', ');
+    throw new ValidationError(errorMessages);
   }
-  return next();
+  
+  next();
 };
 
 export default validate;
