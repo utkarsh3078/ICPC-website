@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import api from "@/lib/axios";
+import { Vortex } from "@/components/ui/vortex";
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -55,7 +56,11 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex h-screen items-center justify-center">
+    <Vortex
+      containerClassName="h-screen w-full overflow-hidden"
+      className="flex items-center justify-center h-full"
+      backgroundColor="black"
+    >
       <Card className="w-[350px]">
         <CardHeader>
           <CardTitle>Register</CardTitle>
@@ -124,6 +129,6 @@ export default function RegisterPage() {
           </Form>
         </CardContent>
       </Card>
-    </div>
+    </Vortex>
   );
 }

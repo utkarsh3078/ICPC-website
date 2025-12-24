@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import api from "@/lib/axios";
 import { useAuthStore } from "@/store/useAuthStore";
+import { Vortex } from "@/components/ui/vortex";
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -50,7 +51,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex h-screen items-center justify-center">
+    <Vortex
+      containerClassName="h-screen w-full overflow-hidden"
+      className="flex items-center justify-center h-full"
+      backgroundColor="black"
+    >
       <Card className="w-[350px]">
         <CardHeader>
           <CardTitle>Login</CardTitle>
@@ -95,6 +100,6 @@ export default function LoginPage() {
           </Form>
         </CardContent>
       </Card>
-    </div>
+    </Vortex>
   );
 }
