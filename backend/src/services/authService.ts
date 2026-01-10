@@ -87,3 +87,32 @@ export const login = async (email: string, password: string) => {
   });
   return { token, user };
 };
+
+export const deleteUser = async (userId: string, requestingUserId: string) => {
+  // Prevent self-deletion
+  if (userId === requestingUserId) {
+    throw new Error("Cannot delete your own account");
+  }
+
+  // Check if target user exists and get their role
+  const targetUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true, email: true },
+  });
+
+  if (!targetUser) {
+    throw new Error("User not found");
+  }
+
+  // Prevent deleting admin users
+  if (targetUser.role === "ADMIN") {
+    throw new Error("Cannot delete admin users");
+  }
+
+  // Delete user (cascades will handle Profile, Submissions, ContestSubmissions, Blogs)
+  await prisma.user.delete({
+    where: { id: userId },
+  });
+
+  return { message: `User ${targetUser.email} deleted successfully` };
+};

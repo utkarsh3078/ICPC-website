@@ -66,3 +66,15 @@ export const login = async (req: Request, res: Response) => {
     fail(res, err.message, 401);
   }
 };
+
+export const deleteUser = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const requestingUser = (req as any).user;
+
+    const result = await authService.deleteUser(id, requestingUser.id);
+    success(res, result);
+  } catch (err: any) {
+    fail(res, err.message, 400);
+  }
+};

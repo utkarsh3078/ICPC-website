@@ -71,6 +71,10 @@ export async function updateUserRole(
   return response.data.data || response.data;
 }
 
+export async function deleteUser(userId: string): Promise<void> {
+  await api.delete(`/auth/users/${userId}`);
+}
+
 // Sessions
 export async function getSessions(): Promise<Session[]> {
   const response = await api.get("/sessions");

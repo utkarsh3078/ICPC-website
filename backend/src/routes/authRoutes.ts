@@ -27,5 +27,6 @@ router.put(
   [body("role").isString()],
   auth.updateRole
 );
+router.delete("/users/:id", isAuthenticated, isAdmin, auth.deleteUser);
 
 export default router;

@@ -40,6 +40,7 @@ import {
   Globe,
   User as UserIcon,
   Pin,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -47,6 +48,7 @@ import {
   getPendingUsers,
   approveUser,
   updateUserRole,
+  deleteUser,
   getAnnouncements,
   createAnnouncement,
   updateAnnouncement,
@@ -272,6 +274,29 @@ export default function AdminDashboardPage() {
       showMessage(
         "error",
         error.response?.data?.message || "Failed to update role"
+      );
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, userEmail: string, userRole: string) => {
+    // Prevent deleting admins (extra safety - backend also checks)
+    if (userRole === "ADMIN") {
+      showMessage("error", "Cannot delete admin users");
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete user "${userEmail}"?\n\nThis will permanently delete all their data including:\n- Profile\n- Task submissions\n- Contest submissions\n- Blogs\n\nThis action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await deleteUser(userId);
+      showMessage("success", "User deleted successfully");
+      fetchDataForTab("users");
+    } catch (error: any) {
+      showMessage(
+        "error",
+        error.response?.data?.message || "Failed to delete user"
       );
     }
   };
@@ -939,17 +964,30 @@ export default function AdminDashboardPage() {
                           {new Date(u.createdAt).toLocaleDateString()}
                         </td>
                         <td className="px-4 py-3">
-                          {!u.approved && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-7 text-xs gap-1"
-                              onClick={() => handleApproveUser(u.id)}
-                            >
-                              <Check className="h-3 w-3" />
-                              Approve
-                            </Button>
-                          )}
+                          <div className="flex gap-2">
+                            {!u.approved && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-xs gap-1"
+                                onClick={() => handleApproveUser(u.id)}
+                              >
+                                <Check className="h-3 w-3" />
+                                Approve
+                              </Button>
+                            )}
+                            {u.role !== "ADMIN" && (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="h-7 text-xs gap-1"
+                                onClick={() => handleDeleteUser(u.id, u.email, u.role)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                                Delete
+                              </Button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))

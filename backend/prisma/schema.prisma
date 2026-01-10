@@ -28,7 +28,7 @@ model Profile {
   year    Int
   contact String
   handles Json?
-  user    User   @relation(fields: [userId], references: [id])
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Task {
@@ -51,7 +51,7 @@ model Submission {
   points    Int              @default(0)
   createdAt DateTime         @default(now())
   task      Task             @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user      User             @relation(fields: [userId], references: [id])
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum SubmissionStatus {
@@ -90,7 +90,7 @@ model Blog {
   approved  Boolean  @default(false)
   comments  Json?
   createdAt DateTime @default(now())
-  author    User     @relation(fields: [authorId], references: [id])
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
 }
 
 model ContestSubmission {
@@ -104,8 +104,8 @@ model ContestSubmission {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   tokens     String[]
-  contest    Contest  @relation(fields: [contestId], references: [id])
-  user       User     @relation(fields: [userId], references: [id])
+  contest    Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum Role {
