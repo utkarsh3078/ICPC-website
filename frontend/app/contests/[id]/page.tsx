@@ -56,6 +56,8 @@ export default function ContestDetailPage() {
   // Timer state
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [contestEnded, setContestEnded] = useState(false);
+  const [contestStarted, setContestStarted] = useState(false);
+  const [timeUntilStart, setTimeUntilStart] = useState<number | null>(null);
 
   // Fetch contest data
   useEffect(() => {
@@ -72,11 +74,22 @@ export default function ContestDetailPage() {
         // Initialize code with template
         setCode(CODE_TEMPLATES[54] || "");
 
-        // Calculate timer
-        if (data.timer) {
-          const startTime = new Date(data.createdAt).getTime();
+        // Calculate contest status using startTime
+        const startTime = new Date(data.startTime).getTime();
+        const now = Date.now();
+        
+        if (now < startTime) {
+          // Contest hasn't started yet
+          setContestStarted(false);
+          setTimeUntilStart(startTime - now);
+        } else {
+          // Contest has started
+          setContestStarted(true);
+          setTimeUntilStart(null);
+          
+          // Calculate time remaining until end
           const endTime = startTime + data.timer * 60 * 1000;
-          const remaining = endTime - Date.now();
+          const remaining = endTime - now;
 
           if (remaining <= 0) {
             setContestEnded(true);
@@ -114,9 +127,31 @@ export default function ContestDetailPage() {
     return () => clearInterval(interval);
   }, [contestId, token]);
 
-  // Timer countdown
+  // Countdown until contest starts
   useEffect(() => {
-    if (timeRemaining === null || timeRemaining <= 0) return;
+    if (contestStarted || timeUntilStart === null) return;
+
+    const interval = setInterval(() => {
+      setTimeUntilStart((prev) => {
+        if (prev === null || prev <= 1000) {
+          // Contest is starting now!
+          setContestStarted(true);
+          // Set time remaining to full duration
+          if (contest?.timer) {
+            setTimeRemaining(contest.timer * 60 * 1000);
+          }
+          return null;
+        }
+        return prev - 1000;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [contestStarted, timeUntilStart, contest?.timer]);
+
+  // Timer countdown (for active contest)
+  useEffect(() => {
+    if (!contestStarted || timeRemaining === null || timeRemaining <= 0) return;
 
     const interval = setInterval(() => {
       setTimeRemaining((prev) => {
@@ -129,7 +164,7 @@ export default function ContestDetailPage() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [timeRemaining]);
+  }, [contestStarted, timeRemaining]);
 
   // Update code template when language changes
   const handleLanguageChange = (value: string) => {
@@ -146,6 +181,11 @@ export default function ContestDetailPage() {
   const handleSubmit = async () => {
     if (!code.trim()) {
       setSubmissionError("Please write some code before submitting");
+      return;
+    }
+
+    if (!contestStarted) {
+      setSubmissionError("Contest has not started yet. Please wait.");
       return;
     }
 
@@ -183,6 +223,38 @@ export default function ContestDetailPage() {
         .padStart(2, "0")}`;
     }
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  };
+
+  const formatCountdown = (ms: number) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (days > 0) {
+      return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    }
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${seconds}s`;
+    }
+    if (minutes > 0) {
+      return `${minutes}m ${seconds}s`;
+    }
+    return `${seconds}s`;
+  };
+
+  const getDifficultyColor = (difficulty: string | undefined) => {
+    switch (difficulty) {
+      case "Easy":
+        return "bg-green-500/20 text-green-400 border-green-500/50";
+      case "Medium":
+        return "bg-yellow-500/20 text-yellow-400 border-yellow-500/50";
+      case "Hard":
+        return "bg-red-500/20 text-red-400 border-red-500/50";
+      default:
+        return "bg-gray-500/20 text-gray-400 border-gray-500/50";
+    }
   };
 
   const getStatusColor = (status: string | null) => {
@@ -229,6 +301,68 @@ export default function ContestDetailPage() {
     (s) => s.problemIdx === selectedProblemIdx
   );
 
+  // Show countdown screen if contest hasn't started
+  if (!contestStarted && timeUntilStart !== null) {
+    return (
+      <div className="min-h-screen bg-black text-white">
+        {/* Header */}
+        <div className="border-b border-gray-800 bg-gray-900/50">
+          <div className="max-w-[1800px] mx-auto px-4 py-3 flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <Link href="/contests">
+                <Button variant="ghost" size="sm">
+                  ← Back
+                </Button>
+              </Link>
+              <h1 className="text-xl font-bold">{contest.title}</h1>
+            </div>
+            <div className="px-4 py-2 rounded-lg font-mono text-lg bg-yellow-500/20 text-yellow-400">
+              Upcoming
+            </div>
+          </div>
+        </div>
+
+        {/* Countdown Screen */}
+        <div className="flex flex-col items-center justify-center h-[calc(100vh-57px)]">
+          <div className="text-center">
+            <div className="text-gray-400 text-lg mb-4">Contest Starts In</div>
+            <div className="text-6xl font-mono font-bold text-white mb-6">
+              {formatCountdown(timeUntilStart)}
+            </div>
+            <div className="text-gray-400 mb-2">
+              {new Date(contest.startTime).toLocaleDateString(undefined, {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </div>
+            <div className="text-gray-500 mb-8">
+              {new Date(contest.startTime).toLocaleTimeString(undefined, {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </div>
+            <div className="bg-gray-800/50 rounded-lg p-6 max-w-md mx-auto">
+              <div className="text-sm text-gray-400 mb-3">Contest Details</div>
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-gray-500">Duration:</span>
+                <span className="text-white">{contest.timer} minutes</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Problems:</span>
+                <span className="text-white">{problems.length} problems</span>
+              </div>
+            </div>
+            <p className="mt-8 text-gray-500 text-sm">
+              Problems will be revealed when the contest starts.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
@@ -244,21 +378,19 @@ export default function ContestDetailPage() {
           </div>
 
           {/* Timer */}
-          {contest.timer && (
-            <div
-              className={`px-4 py-2 rounded-lg font-mono text-lg ${
-                contestEnded
-                  ? "bg-red-500/20 text-red-400"
-                  : timeRemaining && timeRemaining < 300000
-                  ? "bg-yellow-500/20 text-yellow-400"
-                  : "bg-green-500/20 text-green-400"
-              }`}
-            >
-              {contestEnded
-                ? "Contest Ended"
-                : `Time: ${formatTime(timeRemaining || 0)}`}
-            </div>
-          )}
+          <div
+            className={`px-4 py-2 rounded-lg font-mono text-lg ${
+              contestEnded
+                ? "bg-red-500/20 text-red-400"
+                : timeRemaining && timeRemaining < 300000
+                ? "bg-yellow-500/20 text-yellow-400"
+                : "bg-green-500/20 text-green-400"
+            }`}
+          >
+            {contestEnded
+              ? "Contest Ended"
+              : `Time: ${formatTime(timeRemaining || 0)}`}
+          </div>
         </div>
       </div>
 
@@ -343,9 +475,56 @@ export default function ContestDetailPage() {
           <div className="w-1/2 border-r border-gray-800 overflow-y-auto p-6">
             {currentProblem ? (
               <>
-                <h2 className="text-2xl font-bold mb-4">
+                <h2 className="text-2xl font-bold mb-3">
                   {currentProblem.title || `Problem ${selectedProblemIdx + 1}`}
                 </h2>
+
+                {/* Difficulty Badge and Tags */}
+                <div className="flex flex-wrap items-center gap-2 mb-4">
+                  {currentProblem.difficulty && (
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded border ${getDifficultyColor(
+                        currentProblem.difficulty
+                      )}`}
+                    >
+                      {currentProblem.difficulty}
+                    </span>
+                  )}
+                  {currentProblem.tags &&
+                    currentProblem.tags.map((tag, idx) => (
+                      <span
+                        key={idx}
+                        className="px-2 py-1 text-xs bg-blue-500/20 text-blue-400 border border-blue-500/50 rounded"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                </div>
+
+                {/* Constraints Box */}
+                {currentProblem.constraints && (
+                  <div className="mb-4 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+                    <div className="flex items-center gap-6 text-sm">
+                      {currentProblem.constraints.timeLimit && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-400">Time Limit:</span>
+                          <span className="text-white font-medium">
+                            {currentProblem.constraints.timeLimit}s
+                          </span>
+                        </div>
+                      )}
+                      {currentProblem.constraints.memoryLimit && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-400">Memory Limit:</span>
+                          <span className="text-white font-medium">
+                            {currentProblem.constraints.memoryLimit} MB
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="prose prose-invert max-w-none">
                   <div className="whitespace-pre-wrap text-gray-300">
                     {currentProblem.description || "No description available."}

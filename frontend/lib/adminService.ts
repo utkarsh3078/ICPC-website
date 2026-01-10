@@ -146,7 +146,8 @@ export async function getContestSubmissions(contestId: string): Promise<any[]> {
 
 export async function createContest(data: {
   title: string;
-  timer?: number;
+  timer: number; // Duration in minutes (required)
+  startTime: string; // ISO date string in UTC (required)
 }): Promise<any> {
   const response = await api.post("/contests", data);
   return response.data.data || response.data;
@@ -157,6 +158,12 @@ export async function addProblemToContest(
   problem: {
     name: string;
     description?: string;
+    difficulty?: "Easy" | "Medium" | "Hard";
+    tags?: string[];
+    constraints?: {
+      timeLimit?: number;
+      memoryLimit?: number;
+    };
     testCases?: { input: string; output: string }[];
   }
 ): Promise<any> {

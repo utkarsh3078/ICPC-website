@@ -89,11 +89,18 @@ export default function AdminDashboardPage() {
 
   // Form states
   const [contestTitle, setContestTitle] = useState("");
+  const [contestStartTime, setContestStartTime] = useState("");
   const [contestTimer, setContestTimer] = useState("");
   const [selectedContestId, setSelectedContestId] = useState("");
   const [problemName, setProblemName] = useState("");
   const [problemDescription, setProblemDescription] = useState("");
+  const [problemDifficulty, setProblemDifficulty] = useState<"Easy" | "Medium" | "Hard">("Medium");
+  const [problemTags, setProblemTags] = useState("");
+  const [problemTimeLimit, setProblemTimeLimit] = useState("1");
+  const [problemMemoryLimit, setProblemMemoryLimit] = useState("256");
   const [problemTestCases, setProblemTestCases] = useState("");
+  const [testCasesError, setTestCasesError] = useState<string | null>(null);
+  const [testCasesCount, setTestCasesCount] = useState<number>(0);
 
   const [sessionTitle, setSessionTitle] = useState("");
   const [sessionDetails, setSessionDetails] = useState("");
@@ -188,14 +195,31 @@ export default function AdminDashboardPage() {
 
   const handleCreateContest = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!contestStartTime) {
+      showMessage("error", "Please select a start time");
+      return;
+    }
+    if (!contestTimer || parseInt(contestTimer) <= 0) {
+      showMessage("error", "Please enter a valid duration");
+      return;
+    }
+    
     setLoading(true);
     try {
+      // Convert local datetime to UTC ISO string
+      const localDate = new Date(contestStartTime);
+      const utcISOString = localDate.toISOString();
+      
       await createContest({
         title: contestTitle,
-        timer: contestTimer ? parseInt(contestTimer) : undefined,
+        timer: parseInt(contestTimer),
+        startTime: utcISOString,
       });
       showMessage("success", "Contest created successfully!");
       setContestTitle("");
+      setContestStartTime("");
       setContestTimer("");
       fetchDataForTab("contests");
     } catch (error: any) {
@@ -208,33 +232,90 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Validate test cases JSON in real-time
+  const validateTestCases = (value: string) => {
+    setProblemTestCases(value);
+    if (!value.trim()) {
+      setTestCasesError(null);
+      setTestCasesCount(0);
+      return;
+    }
+    try {
+      const parsed = JSON.parse(value);
+      if (!Array.isArray(parsed)) {
+        setTestCasesError("Must be an array of test cases");
+        setTestCasesCount(0);
+        return;
+      }
+      for (let i = 0; i < parsed.length; i++) {
+        if (typeof parsed[i].input !== "string" || typeof parsed[i].output !== "string") {
+          setTestCasesError(`Test case ${i + 1}: must have "input" and "output" as strings`);
+          setTestCasesCount(0);
+          return;
+        }
+      }
+      setTestCasesError(null);
+      setTestCasesCount(parsed.length);
+    } catch (e) {
+      setTestCasesError("Invalid JSON format");
+      setTestCasesCount(0);
+    }
+  };
+
+  const formatTestCasesJSON = () => {
+    if (!problemTestCases.trim()) return;
+    try {
+      const parsed = JSON.parse(problemTestCases);
+      setProblemTestCases(JSON.stringify(parsed, null, 2));
+    } catch (e) {
+      // Can't format invalid JSON
+    }
+  };
+
   const handleAddProblem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedContestId) {
       showMessage("error", "Please select a contest");
       return;
     }
+    if (testCasesError) {
+      showMessage("error", "Please fix test cases JSON errors");
+      return;
+    }
     setLoading(true);
     try {
       let testCases: { input: string; output: string }[] = [];
       if (problemTestCases.trim()) {
-        try {
-          testCases = JSON.parse(problemTestCases);
-        } catch {
-          showMessage("error", "Invalid test cases JSON format");
-          setLoading(false);
-          return;
-        }
+        testCases = JSON.parse(problemTestCases);
       }
+      
+      // Parse tags from comma-separated string
+      const tags = problemTags
+        .split(",")
+        .map((t) => t.trim())
+        .filter((t) => t.length > 0);
+
       await addProblemToContest(selectedContestId, {
         name: problemName,
         description: problemDescription,
+        difficulty: problemDifficulty,
+        tags: tags.length > 0 ? tags : undefined,
+        constraints: {
+          timeLimit: parseFloat(problemTimeLimit) || 1,
+          memoryLimit: parseInt(problemMemoryLimit) || 256,
+        },
         testCases,
       });
       showMessage("success", "Problem added successfully!");
       setProblemName("");
       setProblemDescription("");
+      setProblemDifficulty("Medium");
+      setProblemTags("");
+      setProblemTimeLimit("1");
+      setProblemMemoryLimit("256");
       setProblemTestCases("");
+      setTestCasesError(null);
+      setTestCasesCount(0);
       fetchDataForTab("contests");
     } catch (error: any) {
       showMessage(
@@ -568,7 +649,7 @@ export default function AdminDashboardPage() {
               <CardContent>
                 <form onSubmit={handleCreateContest} className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Contest Title</Label>
+                    <Label>Contest Title *</Label>
                     <Input
                       placeholder="e.g. Weekly Contest #45"
                       value={contestTitle}
@@ -578,13 +659,28 @@ export default function AdminDashboardPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Duration (minutes)</Label>
+                    <Label>Start Time *</Label>
+                    <Input
+                      type="datetime-local"
+                      value={contestStartTime}
+                      onChange={(e) => setContestStartTime(e.target.value)}
+                      className="bg-gray-800 border-gray-700"
+                      required
+                    />
+                    <p className="text-xs text-gray-500">
+                      Schedule when the contest will start (your local timezone)
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Duration (minutes) *</Label>
                     <Input
                       type="number"
+                      min="1"
                       placeholder="e.g. 90"
                       value={contestTimer}
                       onChange={(e) => setContestTimer(e.target.value)}
                       className="bg-gray-800 border-gray-700"
+                      required
                     />
                   </div>
                   <Button type="submit" disabled={loading} className="w-full">
@@ -622,7 +718,7 @@ export default function AdminDashboardPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Problem Name</Label>
+                    <Label>Problem Name *</Label>
                     <Input
                       placeholder="e.g. Two Sum"
                       value={problemName}
@@ -640,16 +736,116 @@ export default function AdminDashboardPage() {
                       className="w-full h-24 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm resize-none"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Test Cases (JSON)</Label>
-                    <textarea
-                      placeholder='[{"input": "1 2", "output": "3"}]'
-                      value={problemTestCases}
-                      onChange={(e) => setProblemTestCases(e.target.value)}
-                      className="w-full h-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm font-mono resize-none"
-                    />
+
+                  {/* Difficulty and Tags Row */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Difficulty</Label>
+                      <Select
+                        value={problemDifficulty}
+                        onValueChange={(v) => setProblemDifficulty(v as "Easy" | "Medium" | "Hard")}
+                      >
+                        <SelectTrigger className="bg-gray-800 border-gray-700">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-800 border-gray-700">
+                          <SelectItem value="Easy">
+                            <span className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-green-500" />
+                              Easy
+                            </span>
+                          </SelectItem>
+                          <SelectItem value="Medium">
+                            <span className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                              Medium
+                            </span>
+                          </SelectItem>
+                          <SelectItem value="Hard">
+                            <span className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-red-500" />
+                              Hard
+                            </span>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Tags</Label>
+                      <Input
+                        placeholder="e.g. Arrays, DP, Greedy"
+                        value={problemTags}
+                        onChange={(e) => setProblemTags(e.target.value)}
+                        className="bg-gray-800 border-gray-700"
+                      />
+                      <p className="text-xs text-gray-500">Comma-separated</p>
+                    </div>
                   </div>
-                  <Button type="submit" disabled={loading} className="w-full">
+
+                  {/* Constraints Row */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Time Limit (seconds)</Label>
+                      <Input
+                        type="number"
+                        step="0.5"
+                        min="0.5"
+                        placeholder="1"
+                        value={problemTimeLimit}
+                        onChange={(e) => setProblemTimeLimit(e.target.value)}
+                        className="bg-gray-800 border-gray-700"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Memory Limit (MB)</Label>
+                      <Input
+                        type="number"
+                        min="16"
+                        placeholder="256"
+                        value={problemMemoryLimit}
+                        onChange={(e) => setProblemMemoryLimit(e.target.value)}
+                        className="bg-gray-800 border-gray-700"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Test Cases */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label>Test Cases (JSON)</Label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={formatTestCasesJSON}
+                        className="h-6 text-xs text-gray-400 hover:text-white"
+                      >
+                        Format JSON
+                      </Button>
+                    </div>
+                    <p className="text-xs text-gray-500 mb-1">
+                      Format: {`[{"input": "...", "output": "..."}]`}
+                    </p>
+                    <textarea
+                      placeholder={`[\n  {"input": "5\\n1 2 3 4 5", "output": "15"},\n  {"input": "3\\n1 2 3", "output": "6"}\n]`}
+                      value={problemTestCases}
+                      onChange={(e) => validateTestCases(e.target.value)}
+                      className={`w-full h-28 px-3 py-2 bg-gray-800 border rounded-md text-sm font-mono resize-none ${
+                        testCasesError 
+                          ? "border-red-500 focus:border-red-500" 
+                          : problemTestCases.trim() && !testCasesError
+                          ? "border-green-500 focus:border-green-500"
+                          : "border-gray-700"
+                      }`}
+                    />
+                    {testCasesError ? (
+                      <p className="text-xs text-red-400">{testCasesError}</p>
+                    ) : testCasesCount > 0 ? (
+                      <p className="text-xs text-green-400">Valid JSON - {testCasesCount} test case{testCasesCount > 1 ? "s" : ""}</p>
+                    ) : null}
+                  </div>
+
+                  <Button type="submit" disabled={loading || !!testCasesError} className="w-full">
                     {loading ? "Adding..." : "Add Problem"}
                   </Button>
                 </form>
@@ -668,36 +864,60 @@ export default function AdminDashboardPage() {
                       No contests yet
                     </p>
                   ) : (
-                    contests.map((c) => (
-                      <div
-                        key={c.id}
-                        className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg"
-                      >
-                        <div>
-                          <p className="font-medium">{c.title}</p>
-                          <p className="text-sm text-gray-400">
-                            {c.problems?.length || 0} problems •{" "}
-                            {c.timer ? `${c.timer} min` : "No time limit"}
-                          </p>
+                    contests.map((c) => {
+                      const startTime = new Date(c.startTime);
+                      const now = new Date();
+                      const isUpcoming = startTime > now;
+                      const endTime = new Date(startTime.getTime() + c.timer * 60 * 1000);
+                      const isEnded = now > endTime;
+                      const status = isUpcoming ? "upcoming" : isEnded ? "ended" : "active";
+                      
+                      return (
+                        <div
+                          key={c.id}
+                          className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg"
+                        >
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{c.title}</p>
+                              <span
+                                className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                  status === "active"
+                                    ? "bg-green-500/20 text-green-400"
+                                    : status === "upcoming"
+                                    ? "bg-yellow-500/20 text-yellow-400"
+                                    : "bg-gray-500/20 text-gray-400"
+                                }`}
+                              >
+                                {status.charAt(0).toUpperCase() + status.slice(1)}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-400">
+                              {c.problems?.length || 0} problems • {c.timer} min
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Starts: {startTime.toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => router.push(`/contests/${c.id}`)}
+                            >
+                              View
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteContest(c.id)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => router.push(`/contests/${c.id}`)}
-                          >
-                            View
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteContest(c.id)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </CardContent>

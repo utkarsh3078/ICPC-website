@@ -58,7 +58,8 @@ model Contest {
   id        String   @id @default(cuid())
   title     String
   problems  Json?
-  timer     Int?
+  timer     Int      // Duration in minutes (required)
+  startTime DateTime // Scheduled start time (required)
   results   Json?
   createdAt DateTime @default(now())
   submissions ContestSubmission[]

@@ -4,6 +4,12 @@ import api from "./axios";
 export interface Problem {
   title: string;
   description: string;
+  difficulty?: "Easy" | "Medium" | "Hard";
+  tags?: string[];
+  constraints?: {
+    timeLimit?: number; // in seconds (e.g., 1, 2)
+    memoryLimit?: number; // in MB (e.g., 256, 512)
+  };
   testCases?: { input: string; output: string }[];
 }
 
@@ -11,7 +17,8 @@ export interface Contest {
   id: string;
   title: string;
   problems: Problem[] | null;
-  timer: number | null;
+  timer: number; // Duration in minutes (required)
+  startTime: string; // ISO date string - scheduled start time (required)
   results: any[] | null;
   createdAt: string;
 }

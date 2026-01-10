@@ -42,8 +42,7 @@ export default function ContestsPage() {
     fetchContests();
   }, [token, router]);
 
-  const formatDuration = (minutes: number | null) => {
-    if (!minutes) return "No time limit";
+  const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     if (hours > 0) {
@@ -53,13 +52,14 @@ export default function ContestsPage() {
   };
 
   const getContestStatus = (contest: Contest) => {
-    if (!contest.timer) return "open";
-    const startTime = new Date(contest.createdAt).getTime();
-    const endTime = startTime + contest.timer * 60 * 1000;
+    const startTime = new Date(contest.startTime).getTime();
     const now = Date.now();
 
     if (now < startTime) return "upcoming";
+    
+    const endTime = startTime + contest.timer * 60 * 1000;
     if (now > endTime) return "ended";
+    
     return "active";
   };
 
@@ -131,14 +131,14 @@ export default function ContestsPage() {
                   <CardContent>
                     <div className="space-y-2 text-sm text-gray-400">
                       <div className="flex justify-between">
-                        <span>Duration:</span>
-                        <span>{formatDuration(contest.timer)}</span>
+                        <span>Starts:</span>
+                        <span>
+                          {new Date(contest.startTime).toLocaleString()}
+                        </span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Created:</span>
-                        <span>
-                          {new Date(contest.createdAt).toLocaleDateString()}
-                        </span>
+                        <span>Duration:</span>
+                        <span>{formatDuration(contest.timer)}</span>
                       </div>
                     </div>
                   </CardContent>
