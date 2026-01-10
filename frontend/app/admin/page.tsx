@@ -388,10 +388,8 @@ export default function AdminDashboardPage() {
       setSessionMeetLink("");
       setSessionDate("");
     } catch (error: any) {
-      showMessage(
-        "error",
-        error.response?.data?.message || "Failed to create session"
-      );
+      const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message || "Failed to create session";
+      showMessage("error", errorMsg);
     } finally {
       setLoading(false);
     }

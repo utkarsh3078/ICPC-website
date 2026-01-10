@@ -81,7 +81,15 @@ export async function createSession(data: {
   meetLink: string; // Required
   date?: string;
 }): Promise<Session> {
-  const response = await api.post("/sessions", data);
+  // Remove undefined/empty values to avoid sending them to the backend
+  const payload: Record<string, string> = {
+    title: data.title,
+    meetLink: data.meetLink,
+  };
+  if (data.details) payload.details = data.details;
+  if (data.date) payload.date = data.date;
+  
+  const response = await api.post("/sessions", payload);
   return response.data.data || response.data;
 }
 
@@ -89,7 +97,14 @@ export async function updateSession(
   id: string,
   data: { title?: string; details?: string; meetLink?: string; date?: string }
 ): Promise<Session> {
-  const response = await api.put(`/sessions/${id}`, data);
+  // Remove undefined/empty values
+  const payload: Record<string, string> = {};
+  if (data.title) payload.title = data.title;
+  if (data.details !== undefined) payload.details = data.details;
+  if (data.meetLink) payload.meetLink = data.meetLink;
+  if (data.date !== undefined) payload.date = data.date;
+  
+  const response = await api.put(`/sessions/${id}`, payload);
   return response.data.data || response.data;
 }
 

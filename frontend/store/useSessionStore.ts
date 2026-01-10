@@ -21,6 +21,14 @@ interface UpdateSessionData {
   date?: string;
 }
 
+// Helper to extract error message from various error formats
+const getErrorMessage = (err: any, fallback: string): string => {
+  return err.response?.data?.error || 
+         err.response?.data?.message || 
+         err.message || 
+         fallback;
+};
+
 interface SessionState {
   // State
   sessions: Session[];
@@ -52,7 +60,7 @@ export const useSessionStore = create<SessionState>((set) => ({
       set({ sessions, loading: false });
     } catch (err: any) {
       set({
-        error: err.response?.data?.message || err.message || "Failed to fetch sessions",
+        error: getErrorMessage(err, "Failed to fetch sessions"),
         loading: false,
       });
     }
@@ -69,7 +77,7 @@ export const useSessionStore = create<SessionState>((set) => ({
       }));
     } catch (err: any) {
       set({
-        error: err.response?.data?.message || err.message || "Failed to create session",
+        error: getErrorMessage(err, "Failed to create session"),
         loading: false,
       });
       throw err;
@@ -88,7 +96,7 @@ export const useSessionStore = create<SessionState>((set) => ({
       }));
     } catch (err: any) {
       set({
-        error: err.response?.data?.message || err.message || "Failed to update session",
+        error: getErrorMessage(err, "Failed to update session"),
         loading: false,
       });
       throw err;
@@ -104,7 +112,7 @@ export const useSessionStore = create<SessionState>((set) => ({
       }));
     } catch (err: any) {
       set({
-        error: err.response?.data?.message || err.message || "Failed to delete session",
+        error: getErrorMessage(err, "Failed to delete session"),
       });
       throw err;
     }
