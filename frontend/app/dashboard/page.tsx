@@ -19,8 +19,14 @@ import {
   Code,
   LogOut,
   Play,
+  ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
+import {
+  getSessions,
+  getSessionStatus,
+  Session,
+} from "@/lib/sessionService";
 
 interface Profile {
   name: string;
@@ -54,6 +60,7 @@ export default function DashboardPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [contests, setContests] = useState<Contest[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [nextSession, setNextSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -66,11 +73,12 @@ export default function DashboardPage() {
     const fetchData = async () => {
       if (!isAuthenticated) return;
       try {
-        const [profileRes, contestsRes, submissionsRes] =
+        const [profileRes, contestsRes, submissionsRes, sessionsRes] =
           await Promise.allSettled([
             api.get("/profile"),
             api.get("/contests"),
             api.get("/contests/my-submissions"),
+            getSessions(),
           ]);
 
         if (profileRes.status === "fulfilled") {
@@ -81,6 +89,21 @@ export default function DashboardPage() {
         }
         if (submissionsRes.status === "fulfilled") {
           setSubmissions(submissionsRes.value.data.data);
+        }
+        if (sessionsRes.status === "fulfilled") {
+          // Find next upcoming or live session
+          const sessions = sessionsRes.value;
+          const upcomingOrLive = sessions
+            .filter((s: Session) => {
+              const status = getSessionStatus(s);
+              return status === "upcoming" || status === "live";
+            })
+            .sort((a: Session, b: Session) => {
+              if (!a.date) return 1;
+              if (!b.date) return -1;
+              return new Date(a.date).getTime() - new Date(b.date).getTime();
+            });
+          setNextSession(upcomingOrLive[0] || null);
         }
       } catch (error) {
         console.error("Error fetching dashboard data", error);
@@ -120,6 +143,12 @@ export default function DashboardPage() {
               <Button variant="outline" className="gap-2">
                 <Play className="w-4 h-4" />
                 Contests
+              </Button>
+            </Link>
+            <Link href="/sessions">
+              <Button variant="outline" className="gap-2">
+                <Calendar className="w-4 h-4" />
+                Sessions
               </Button>
             </Link>
             {user.role === "ADMIN" && (
@@ -199,10 +228,67 @@ export default function DashboardPage() {
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">TBA</div>
-              <p className="text-xs text-muted-foreground">
-                Check announcements
-              </p>
+              {nextSession ? (
+                (() => {
+                  const status = getSessionStatus(nextSession);
+                  const isLive = status === "live";
+                  const formatSessionDate = (date: string | null) => {
+                    if (!date) return "TBA";
+                    return new Date(date).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    });
+                  };
+                  const formatSessionTime = (date: string | null) => {
+                    if (!date) return "";
+                    return new Date(date).toLocaleTimeString("en-US", {
+                      hour: "numeric",
+                      minute: "2-digit",
+                      hour12: true,
+                    });
+                  };
+                  return (
+                    <>
+                      <div
+                        className={`text-2xl font-bold ${
+                          isLive ? "text-green-500" : "text-primary"
+                        }`}
+                      >
+                        {isLive ? "Live Now!" : formatSessionDate(nextSession.date)}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {nextSession.title}
+                        {!isLive && nextSession.date && ` - ${formatSessionTime(nextSession.date)}`}
+                      </p>
+                      {isLive ? (
+                        <Button
+                          size="sm"
+                          className="mt-2 gap-1"
+                          onClick={() =>
+                            window.open(nextSession.meetLink, "_blank", "noopener,noreferrer")
+                          }
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          Join
+                        </Button>
+                      ) : (
+                        <Link href="/sessions">
+                          <Button size="sm" variant="outline" className="mt-2">
+                            View
+                          </Button>
+                        </Link>
+                      )}
+                    </>
+                  );
+                })()
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-primary">TBA</div>
+                  <p className="text-xs text-muted-foreground">
+                    No upcoming sessions
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
