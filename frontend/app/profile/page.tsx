@@ -30,6 +30,10 @@ import {
   Phone,
   GraduationCap,
   Calendar,
+  Briefcase,
+  MapPin,
+  Linkedin,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -41,6 +45,7 @@ import {
   validateName,
   BRANCH_OPTIONS,
   YEAR_OPTIONS,
+  GRADUATION_YEAR_OPTIONS,
   CP_PLATFORMS,
 } from "@/lib/profileService";
 
@@ -57,6 +62,14 @@ export default function ProfilePage() {
   const [year, setYear] = useState<number>(1);
   const [phone, setPhone] = useState("");
   const [handles, setHandles] = useState<Handles>({});
+
+  // Alumni-specific form state
+  const [graduationYear, setGraduationYear] = useState<number | null>(null);
+  const [company, setCompany] = useState("");
+  const [position, setPosition] = useState("");
+  const [location, setLocation] = useState("");
+  const [bio, setBio] = useState("");
+  const [linkedIn, setLinkedIn] = useState("");
 
   // UI state
   const [loading, setLoading] = useState(true);
@@ -87,6 +100,13 @@ export default function ProfilePage() {
           setYear(profile.year || 1);
           setPhone(profile.contact || "");
           setHandles(profile.handles || {});
+          // Alumni fields
+          setGraduationYear(profile.graduationYear || null);
+          setCompany(profile.company || "");
+          setPosition(profile.position || "");
+          setLocation(profile.location || "");
+          setBio(profile.bio || "");
+          setLinkedIn(profile.linkedIn || "");
           setIsFirstTime(false);
         } else {
           // No profile - first time setup
@@ -125,6 +145,11 @@ export default function ProfilePage() {
       newErrors.year = "Please select your year";
     }
 
+    // Validate graduation year (required for alumni)
+    if (isAlumni && !graduationYear) {
+      newErrors.graduationYear = "Please select your graduation year";
+    }
+
     // Validate phone (optional but must be valid if provided)
     if (phone && !validatePhone(phone)) {
       newErrors.phone = "Please enter a valid 10-digit mobile number";
@@ -150,6 +175,13 @@ export default function ProfilePage() {
         year: isAlumni ? 1 : year, // Default to 1 for alumni
         contact: phone.trim() || "",
         handles,
+        // Alumni fields
+        graduationYear: isAlumni ? graduationYear : null,
+        company: isAlumni ? company.trim() || null : null,
+        position: isAlumni ? position.trim() || null : null,
+        location: isAlumni ? location.trim() || null : null,
+        bio: isAlumni ? bio.trim() || null : null,
+        linkedIn: isAlumni ? linkedIn.trim() || null : null,
       });
 
       // Update auth store - profile now exists
@@ -394,6 +426,132 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
+          {/* Alumni Information (only for alumni users) */}
+          {isAlumni && (
+            <Card className="bg-gray-900 border-gray-800">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Briefcase className="h-5 w-5" />
+                  Alumni Information
+                </CardTitle>
+                <CardDescription>
+                  Professional details visible to current students. Graduation year is required.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Graduation Year */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <GraduationCap className="h-4 w-4" />
+                    Graduation Year <span className="text-red-400">*</span>
+                  </Label>
+                  <Select
+                    value={graduationYear?.toString() || ""}
+                    onValueChange={(value) => {
+                      setGraduationYear(parseInt(value));
+                      if (errors.graduationYear) {
+                        setErrors((prev) => ({ ...prev, graduationYear: "" }));
+                      }
+                    }}
+                  >
+                    <SelectTrigger
+                      className={`bg-gray-800 border-gray-700 ${
+                        errors.graduationYear ? "border-red-500" : ""
+                      }`}
+                    >
+                      <SelectValue placeholder="Select graduation year" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700 max-h-48">
+                      {GRADUATION_YEAR_OPTIONS.map((option) => (
+                        <SelectItem
+                          key={option.value}
+                          value={option.value.toString()}
+                        >
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.graduationYear && (
+                    <p className="text-xs text-red-400">{errors.graduationYear}</p>
+                  )}
+                </div>
+
+                {/* Company and Position in a row */}
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Briefcase className="h-4 w-4" />
+                      Company
+                    </Label>
+                    <Input
+                      placeholder="e.g. Google, Microsoft"
+                      value={company}
+                      onChange={(e) => setCompany(e.target.value)}
+                      className="bg-gray-800 border-gray-700"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Position</Label>
+                    <Input
+                      placeholder="e.g. Software Engineer"
+                      value={position}
+                      onChange={(e) => setPosition(e.target.value)}
+                      className="bg-gray-800 border-gray-700"
+                    />
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Location
+                  </Label>
+                  <Input
+                    placeholder="e.g. Bangalore, India"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="bg-gray-800 border-gray-700"
+                  />
+                </div>
+
+                {/* LinkedIn */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Linkedin className="h-4 w-4" />
+                    LinkedIn Profile
+                  </Label>
+                  <Input
+                    type="url"
+                    placeholder="https://linkedin.com/in/yourprofile"
+                    value={linkedIn}
+                    onChange={(e) => setLinkedIn(e.target.value)}
+                    className="bg-gray-800 border-gray-700"
+                  />
+                </div>
+
+                {/* Bio */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Bio
+                  </Label>
+                  <textarea
+                    placeholder="Tell students about your journey, achievements, and advice..."
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    rows={4}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Optional. Share your experience and tips for current students.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Competitive Programming Handles */}
           <Card className="bg-gray-900 border-gray-800">
             <CardHeader>
@@ -430,7 +588,7 @@ export default function ProfilePage() {
           <div className="flex justify-end">
             <Button
               type="submit"
-              disabled={saving || !name || !branch || (!isAlumni && !year)}
+              disabled={saving || !name || !branch || (!isAlumni && !year) || (isAlumni && !graduationYear)}
               className="gap-2 min-w-[150px]"
             >
               {saving ? (

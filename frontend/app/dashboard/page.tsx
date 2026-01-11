@@ -26,6 +26,7 @@ import {
   ArrowRight,
   Settings,
   Megaphone,
+  GraduationCap,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -211,6 +212,12 @@ export default function DashboardPage() {
             {user.role === "ADMIN" && (
               <Button onClick={() => router.push("/admin")} variant="outline">
                 Admin Dashboard
+              </Button>
+            )}
+            {user.role === "ALUMNI" && (
+              <Button onClick={() => router.push("/alumni")} variant="outline" className="gap-2">
+                <GraduationCap className="w-4 h-4" />
+                Alumni Panel
               </Button>
             )}
             <Button

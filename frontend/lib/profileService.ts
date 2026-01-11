@@ -18,6 +18,13 @@ export interface Profile {
   year: number;
   contact: string;
   handles?: Handles;
+  // Alumni-specific fields
+  graduationYear?: number | null;
+  company?: string | null;
+  position?: string | null;
+  location?: string | null;
+  bio?: string | null;
+  linkedIn?: string | null;
 }
 
 export interface ProfileInput {
@@ -26,6 +33,13 @@ export interface ProfileInput {
   year: number;
   contact?: string;
   handles?: Handles;
+  // Alumni-specific fields
+  graduationYear?: number | null;
+  company?: string | null;
+  position?: string | null;
+  location?: string | null;
+  bio?: string | null;
+  linkedIn?: string | null;
 }
 
 // Branch options
@@ -45,6 +59,13 @@ export const YEAR_OPTIONS = [
   { value: 3, label: "3rd Year" },
   { value: 4, label: "4th Year" },
 ] as const;
+
+// Graduation year options (for alumni)
+const currentYear = new Date().getFullYear();
+export const GRADUATION_YEAR_OPTIONS = Array.from({ length: 20 }, (_, i) => ({
+  value: currentYear - i,
+  label: (currentYear - i).toString(),
+}));
 
 // Competitive programming platforms
 export const CP_PLATFORMS = [

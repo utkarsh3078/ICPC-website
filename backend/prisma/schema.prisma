@@ -21,14 +21,21 @@ model User {
 }
 
 model Profile {
-  id      String @id @default(cuid())
-  userId  String @unique
-  name    String
-  branch  String
-  year    Int
-  contact String
-  handles Json?
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String  @id @default(cuid())
+  userId         String  @unique
+  name           String
+  branch         String
+  year           Int
+  contact        String
+  handles        Json?
+  // Alumni-specific fields (nullable for students)
+  graduationYear Int?
+  company        String?
+  position       String?
+  location       String?
+  bio            String?
+  linkedIn       String?
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Task {
