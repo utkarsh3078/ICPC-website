@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useBlogStore } from "@/store/useBlogStore";
+import { DashboardLayout } from "@/components/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -66,14 +67,6 @@ export default function EditBlogPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
-  // Auth check
-  useEffect(() => {
-    if (!hasHydrated) return;
-    if (!isAuthenticated) {
-      router.push("/login");
-    }
-  }, [hasHydrated, isAuthenticated, router]);
-
   // Fetch blog and tags on mount
   useEffect(() => {
     if (isAuthenticated && hasHydrated && blogId) {
@@ -106,43 +99,39 @@ export default function EditBlogPage() {
     }
   }, [currentBlog, user, router]);
 
-  if (!hasHydrated || !isAuthenticated) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="animate-pulse text-xl text-foreground">Loading...</div>
-      </div>
-    );
-  }
-
   if (currentBlogLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
     );
   }
 
   if (currentBlogError) {
     return (
-      <div className="min-h-screen bg-background text-foreground p-8">
-        <div className="max-w-4xl mx-auto">
-          <Card className="bg-red-500/10 border-red-500/30">
-            <CardContent className="py-12 text-center">
-              <AlertCircle className="h-12 w-12 mx-auto text-red-400 mb-4" />
-              <h2 className="text-xl font-semibold text-red-400 mb-2">
-                {currentBlogError}
-              </h2>
-              <Button
-                variant="outline"
-                onClick={() => router.push("/blog/my")}
-                className="mt-4"
-              >
-                Back to My Blogs
-              </Button>
-            </CardContent>
-          </Card>
+      <DashboardLayout>
+        <div className="p-8">
+          <div className="max-w-4xl mx-auto">
+            <Card className="bg-red-500/10 border-red-500/30">
+              <CardContent className="py-12 text-center">
+                <AlertCircle className="h-12 w-12 mx-auto text-red-400 mb-4" />
+                <h2 className="text-xl font-semibold text-red-400 mb-2">
+                  {currentBlogError}
+                </h2>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push("/blog/my")}
+                  className="mt-4"
+                >
+                  Back to My Blogs
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
@@ -195,26 +184,27 @@ export default function EditBlogPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-8">
-      <div className="max-w-4xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.push("/blog/my")}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-primary">
-              Edit Blog
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Update your blog post
-            </p>
+    <DashboardLayout>
+      <div className="p-8">
+        <div className="max-w-4xl mx-auto space-y-8">
+          {/* Header */}
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push("/blog/my")}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-primary">
+                Edit Blog
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Update your blog post
+              </p>
+            </div>
           </div>
-        </div>
 
         {/* Rejection Reason Banner */}
         {currentBlog.status === "REJECTED" && currentBlog.rejectionReason && (
@@ -374,7 +364,8 @@ export default function EditBlogPage() {
             Save & Resubmit
           </Button>
         </div>
+        </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

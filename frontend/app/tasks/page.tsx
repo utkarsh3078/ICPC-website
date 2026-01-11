@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTaskStore } from "@/store/useTaskStore";
 import { Button } from "@/components/ui/button";
@@ -14,15 +13,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DashboardLayout } from "@/components/dashboard-layout";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  ArrowLeft,
   CheckSquare,
   Clock,
   Trophy,
@@ -33,10 +25,9 @@ import {
   CheckCircle,
   XCircle,
   Loader2,
-  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Task, getTaskStatus, getSubmissionStatusColor } from "@/lib/taskService";
+import { Task, getTaskStatus } from "@/lib/taskService";
 
 type FilterType = "all" | "available" | "pending" | "completed";
 
@@ -44,7 +35,6 @@ export default function TasksPage() {
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => !!state.token);
   const hasHydrated = useAuthStore((state) => state._hasHydrated);
-  const router = useRouter();
 
   const {
     tasks,
@@ -60,14 +50,6 @@ export default function TasksPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [submissionLink, setSubmissionLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (hasHydrated) {
-      if (!isAuthenticated) {
-        router.push("/login");
-      }
-    }
-  }, [isAuthenticated, hasHydrated, router]);
 
   useEffect(() => {
     if (hasHydrated && isAuthenticated) {
@@ -147,49 +129,28 @@ export default function TasksPage() {
     ).length,
   };
 
-  if (!hasHydrated || !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="text-white">Loading...</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <div className="border-b border-gray-800 bg-gray-900/50">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => router.push("/dashboard")}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <CheckSquare className="h-6 w-6" />
-                Tasks
-              </h1>
-              <p className="text-sm text-gray-400">
-                Complete tasks to earn points
-              </p>
-            </div>
+    <DashboardLayout>
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <CheckSquare className="h-8 w-8" />
+              Tasks
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Complete tasks to earn points
+            </p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 rounded-lg border border-purple-500/30">
-              <Trophy className="h-5 w-5 text-purple-400" />
-              <span className="text-purple-400 font-semibold">
-                {userPoints} pts
-              </span>
-            </div>
+          <div className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 rounded-lg border border-purple-500/30">
+            <Trophy className="h-5 w-5 text-purple-400" />
+            <span className="text-purple-400 font-semibold">
+              {userPoints} pts
+            </span>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-6">
         {/* Filter Bar */}
         <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
           <div className="flex gap-2 flex-wrap">
@@ -462,6 +423,6 @@ export default function TasksPage() {
           </Card>
         </div>
       )}
-    </div>
+    </DashboardLayout>
   );
 }

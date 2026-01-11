@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useBlogStore } from "@/store/useBlogStore";
+import { DashboardLayout } from "@/components/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -52,19 +53,14 @@ export default function WriteBlogPage() {
   const [customTag, setCustomTag] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Auth check
+  // Role check - only students and alumni can write blogs
   useEffect(() => {
     if (!hasHydrated) return;
-    if (!isAuthenticated) {
-      router.push("/login");
-      return;
-    }
-    // Only students and alumni can write blogs
     if (user?.role !== "STUDENT" && user?.role !== "ALUMNI") {
       toast.error("Only students and alumni can write blogs");
       router.push("/blog");
     }
-  }, [hasHydrated, isAuthenticated, user, router]);
+  }, [hasHydrated, user, router]);
 
   // Fetch tags on mount
   useEffect(() => {
@@ -72,14 +68,6 @@ export default function WriteBlogPage() {
       fetchTags();
     }
   }, [isAuthenticated, hasHydrated, fetchTags]);
-
-  if (!hasHydrated || !isAuthenticated) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="animate-pulse text-xl text-foreground">Loading...</div>
-      </div>
-    );
-  }
 
   const handleTagToggle = (tag: string) => {
     setSelectedTags((prev) =>
@@ -126,26 +114,27 @@ export default function WriteBlogPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-8">
-      <div className="max-w-4xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.push("/blog")}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-primary">
-              Write a Blog
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Share your knowledge with the community
-            </p>
+    <DashboardLayout>
+      <div className="p-8">
+        <div className="max-w-4xl mx-auto space-y-8">
+          {/* Header */}
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push("/blog")}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-primary">
+                Write a Blog
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Share your knowledge with the community
+              </p>
+            </div>
           </div>
-        </div>
 
         {/* Info Banner */}
         <div className="flex items-start gap-3 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
@@ -290,7 +279,8 @@ export default function WriteBlogPage() {
             Submit for Approval
           </Button>
         </div>
+        </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

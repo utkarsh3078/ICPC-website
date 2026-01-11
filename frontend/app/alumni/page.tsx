@@ -3,6 +3,7 @@
 import { useEffect, useState, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
+import { DashboardLayout } from "@/components/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,7 +14,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
-  ArrowLeft,
   Users,
   Search,
   RefreshCw,
@@ -44,12 +44,8 @@ export default function AlumniDashboardPage() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   useEffect(() => {
-    if (hasHydrated) {
-      if (!isAuthenticated) {
-        router.push("/login");
-      } else if (user?.role !== "ALUMNI") {
-        router.push("/dashboard");
-      }
+    if (hasHydrated && isAuthenticated && user?.role !== "ALUMNI") {
+      router.push("/dashboard");
     }
   }, [isAuthenticated, hasHydrated, user, router]);
 
@@ -145,27 +141,18 @@ export default function AlumniDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <div className="border-b border-gray-800 bg-gray-900/50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => router.push("/dashboard")}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Users className="h-6 w-6" />
-                Alumni Dashboard
-              </h1>
-              <p className="text-sm text-gray-400">
-                View student rankings and profiles
-              </p>
-            </div>
+    <DashboardLayout>
+      <div className="p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Users className="h-6 w-6" />
+              Alumni Dashboard
+            </h1>
+            <p className="text-sm text-gray-400">
+              View student rankings and profiles
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <Button
@@ -189,9 +176,6 @@ export default function AlumniDashboardPage() {
             </Button>
           </div>
         </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-3 mb-6">
           <Card className="bg-gray-900 border-gray-800">
@@ -476,7 +460,7 @@ export default function AlumniDashboardPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }
 

@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useBlogStore } from "@/store/useBlogStore";
+import { DashboardLayout } from "@/components/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,7 +14,6 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import {
-  ArrowLeft,
   PenSquare,
   User,
   Clock,
@@ -25,7 +24,6 @@ import {
 } from "lucide-react";
 
 export default function BlogListingPage() {
-  const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => !!state.token);
   const hasHydrated = useAuthStore((state) => state._hasHydrated);
@@ -44,14 +42,6 @@ export default function BlogListingPage() {
     fetchTags,
   } = useBlogStore();
 
-  // Auth check
-  useEffect(() => {
-    if (!hasHydrated) return;
-    if (!isAuthenticated) {
-      router.push("/login");
-    }
-  }, [hasHydrated, isAuthenticated, router]);
-
   // Fetch blogs and tags on mount
   useEffect(() => {
     if (isAuthenticated && hasHydrated) {
@@ -59,14 +49,6 @@ export default function BlogListingPage() {
       fetchTags();
     }
   }, [isAuthenticated, hasHydrated, fetchBlogs, fetchTags]);
-
-  if (!hasHydrated || !isAuthenticated) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="animate-pulse text-xl text-foreground">Loading...</div>
-      </div>
-    );
-  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -88,18 +70,11 @@ export default function BlogListingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-8">
-      <div className="max-w-6xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => router.push("/dashboard")}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
+    <DashboardLayout>
+      <div className="p-8">
+        <div className="max-w-6xl mx-auto space-y-8">
+          {/* Header */}
+          <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold tracking-tight text-primary">
                 Blog
@@ -108,24 +83,23 @@ export default function BlogListingPage() {
                 Insights and articles from our community
               </p>
             </div>
-          </div>
-          <div className="flex gap-2">
-            <Link href="/blog/my">
-              <Button variant="outline" className="gap-2">
-                <FileText className="h-4 w-4" />
-                My Blogs
-              </Button>
-            </Link>
-            {(user?.role === "STUDENT" || user?.role === "ALUMNI") && (
-              <Link href="/blog/write">
-                <Button className="gap-2">
-                  <PenSquare className="h-4 w-4" />
-                  Write Blog
+            <div className="flex gap-2">
+              <Link href="/blog/my">
+                <Button variant="outline" className="gap-2">
+                  <FileText className="h-4 w-4" />
+                  My Blogs
                 </Button>
               </Link>
-            )}
+              {(user?.role === "STUDENT" || user?.role === "ALUMNI") && (
+                <Link href="/blog/write">
+                  <Button className="gap-2">
+                    <PenSquare className="h-4 w-4" />
+                    Write Blog
+                  </Button>
+                </Link>
+              )}
+            </div>
           </div>
-        </div>
 
         {/* Tags Filter */}
         <Card className="bg-white/5 backdrop-blur-xl border border-white/10">
@@ -269,7 +243,8 @@ export default function BlogListingPage() {
             )}
           </>
         )}
+        </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

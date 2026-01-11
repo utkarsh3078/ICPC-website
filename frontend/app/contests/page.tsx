@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getContests, Contest } from "@/lib/contestService";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -14,19 +13,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { DashboardLayout } from "@/components/dashboard-layout";
 
 export default function ContestsPage() {
   const [contests, setContests] = useState<Contest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user, token } = useAuthStore();
-  const router = useRouter();
+  const { token } = useAuthStore();
 
   useEffect(() => {
-    if (!token) {
-      router.push("/login");
-      return;
-    }
+    if (!token) return;
 
     async function fetchContests() {
       try {
@@ -40,7 +36,7 @@ export default function ContestsPage() {
     }
 
     fetchContests();
-  }, [token, router]);
+  }, [token]);
 
   const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
@@ -63,28 +59,21 @@ export default function ContestsPage() {
     return "active";
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="text-white text-xl">Loading contests...</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-black text-white p-8">
+    <DashboardLayout>
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Contests</h1>
-            <p className="text-gray-400">
-              Participate in coding contests and improve your skills
-            </p>
-          </div>
-          <Link href="/dashboard">
-            <Button variant="outline">Back to Dashboard</Button>
-          </Link>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2">Contests</h1>
+          <p className="text-gray-400">
+            Participate in coding contests and improve your skills
+          </p>
         </div>
+
+        {loading && (
+          <div className="text-center py-12">
+            <div className="text-xl animate-pulse">Loading contests...</div>
+          </div>
+        )}
 
         {error && (
           <div className="bg-red-500/20 border border-red-500 rounded-lg p-4 mb-6">
@@ -92,11 +81,13 @@ export default function ContestsPage() {
           </div>
         )}
 
-        {contests.length === 0 ? (
+        {!loading && contests.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-400 text-lg">No contests available yet.</p>
           </div>
-        ) : (
+        )}
+
+        {!loading && contests.length > 0 && (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {contests.map((contest) => {
               const status = getContestStatus(contest);
@@ -155,6 +146,6 @@ export default function ContestsPage() {
           </div>
         )}
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

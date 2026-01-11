@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
+import { DashboardLayout } from "@/components/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,7 +22,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  ArrowLeft,
   Users,
   Trophy,
   Calendar,
@@ -198,12 +198,8 @@ export default function AdminDashboardPage() {
   const [rejectionReason, setRejectionReason] = useState("");
 
   useEffect(() => {
-    if (hasHydrated) {
-      if (!isAuthenticated) {
-        router.push("/login");
-      } else if (user?.role !== "ADMIN") {
-        router.push("/dashboard");
-      }
+    if (hasHydrated && isAuthenticated && user?.role !== "ADMIN") {
+      router.push("/dashboard");
     }
   }, [isAuthenticated, hasHydrated, user, router]);
 
@@ -839,20 +835,11 @@ export default function AdminDashboardPage() {
   const displayedUsers = userFilter === "pending" ? pendingUsers : users;
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <div className="border-b border-gray-800 bg-gray-900/50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => router.push("/dashboard")}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-          </div>
+    <DashboardLayout>
+      <div className="p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
           <Button
             variant="outline"
             size="sm"
@@ -863,9 +850,6 @@ export default function AdminDashboardPage() {
             Refresh
           </Button>
         </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Message */}
         {message && (
           <div
@@ -2419,6 +2403,6 @@ export default function AdminDashboardPage() {
           </Card>
         )}
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
+import { DashboardLayout } from "@/components/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,7 +22,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  ArrowLeft,
   User,
   Code,
   Save,
@@ -79,12 +79,6 @@ export default function ProfilePage() {
 
   // Check if user is ALUMNI
   const isAlumni = user?.role === "ALUMNI";
-
-  useEffect(() => {
-    if (hasHydrated && !isAuthenticated) {
-      router.push("/login");
-    }
-  }, [isAuthenticated, hasHydrated, router]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -216,47 +210,37 @@ export default function ProfilePage() {
 
   if (!hasHydrated || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-      </div>
+      <DashboardLayout requireProfile={false}>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      </DashboardLayout>
     );
   }
 
   if (!user) return null;
 
-  return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <div className="border-b border-gray-800 bg-gray-900/50">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            {!isFirstTime && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => router.push("/dashboard")}
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            )}
+  // If first-time profile setup, render without sidebar
+  if (isFirstTime) {
+    return (
+      <div className="min-h-screen bg-black text-white">
+        {/* Header */}
+        <div className="border-b border-gray-800 bg-gray-900/50">
+          <div className="max-w-3xl mx-auto px-4 py-4">
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 <User className="h-6 w-6" />
                 Profile Settings
               </h1>
-              {isFirstTime && (
-                <p className="text-sm text-gray-400">
-                  Complete your profile to continue
-                </p>
-              )}
+              <p className="text-sm text-gray-400">
+                Complete your profile to continue
+              </p>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-6">
-        {/* Welcome message for first-time users */}
-        {isFirstTime && (
+        <div className="max-w-3xl mx-auto px-4 py-6">
+          {/* Welcome message for first-time users */}
           <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
             <h2 className="text-lg font-semibold text-blue-400 mb-1">
               Welcome to ICPC Portal!
@@ -266,346 +250,375 @@ export default function ProfilePage() {
               your competitive programming journey.
             </p>
           </div>
-        )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Email (Read-only) */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2 text-gray-400">
-              <Mail className="h-4 w-4" />
-              Email
-            </Label>
-            <Input
-              type="email"
-              value={user.email}
-              disabled
-              className="bg-gray-800/50 border-gray-700 text-gray-400 cursor-not-allowed"
-            />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {renderFormContent()}
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // Regular profile editing with sidebar
+  return (
+    <DashboardLayout>
+      <div className="p-6">
+        <div className="max-w-3xl mx-auto">
+          {/* Header */}
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <User className="h-6 w-6" />
+              Profile Settings
+            </h1>
           </div>
 
-          {/* Personal Information */}
-          <Card className="bg-gray-900 border-gray-800">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <GraduationCap className="h-5 w-5" />
-                Personal Information
-              </CardTitle>
-              <CardDescription>
-                Basic details about you. Fields marked with * are required.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Name */}
-              <div className="space-y-2">
-                <Label htmlFor="name">
-                  Name <span className="text-red-400">*</span>
-                </Label>
-                <Input
-                  id="name"
-                  placeholder="Enter your full name"
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    if (errors.name) {
-                      setErrors((prev) => ({ ...prev, name: "" }));
-                    }
-                  }}
-                  className={`bg-gray-800 border-gray-700 ${
-                    errors.name ? "border-red-500" : ""
-                  }`}
-                />
-                {errors.name && (
-                  <p className="text-xs text-red-400">{errors.name}</p>
-                )}
-              </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {renderFormContent()}
+          </form>
+        </div>
+      </div>
+    </DashboardLayout>
+  );
 
-              {/* Branch */}
+  function renderFormContent() {
+    return (
+      <>
+        {/* Email (Read-only) */}
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2 text-gray-400">
+            <Mail className="h-4 w-4" />
+            Email
+          </Label>
+          <Input
+            type="email"
+            value={user!.email}
+            disabled
+            className="bg-gray-800/50 border-gray-700 text-gray-400 cursor-not-allowed"
+          />
+        </div>
+
+        {/* Personal Information */}
+        <Card className="bg-gray-900 border-gray-800">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <GraduationCap className="h-5 w-5" />
+              Personal Information
+            </CardTitle>
+            <CardDescription>
+              Basic details about you. Fields marked with * are required.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Name */}
+            <div className="space-y-2">
+              <Label htmlFor="name">
+                Name <span className="text-red-400">*</span>
+              </Label>
+              <Input
+                id="name"
+                placeholder="Enter your full name"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (errors.name) {
+                    setErrors((prev) => ({ ...prev, name: "" }));
+                  }
+                }}
+                className={`bg-gray-800 border-gray-700 ${
+                  errors.name ? "border-red-500" : ""
+                }`}
+              />
+              {errors.name && (
+                <p className="text-xs text-red-400">{errors.name}</p>
+              )}
+            </div>
+
+            {/* Branch */}
+            <div className="space-y-2">
+              <Label>
+                Branch <span className="text-red-400">*</span>
+              </Label>
+              <Select
+                value={branch}
+                onValueChange={(value) => {
+                  setBranch(value);
+                  if (errors.branch) {
+                    setErrors((prev) => ({ ...prev, branch: "" }));
+                  }
+                }}
+              >
+                <SelectTrigger
+                  className={`bg-gray-800 border-gray-700 ${
+                    errors.branch ? "border-red-500" : ""
+                  }`}
+                >
+                  <SelectValue placeholder="Select your branch" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700">
+                  {BRANCH_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.branch && (
+                <p className="text-xs text-red-400">{errors.branch}</p>
+              )}
+            </div>
+
+            {/* Year (hidden for Alumni) */}
+            {!isAlumni && (
               <div className="space-y-2">
-                <Label>
-                  Branch <span className="text-red-400">*</span>
+                <Label className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Year <span className="text-red-400">*</span>
                 </Label>
                 <Select
-                  value={branch}
+                  value={year.toString()}
                   onValueChange={(value) => {
-                    setBranch(value);
-                    if (errors.branch) {
-                      setErrors((prev) => ({ ...prev, branch: "" }));
+                    setYear(parseInt(value));
+                    if (errors.year) {
+                      setErrors((prev) => ({ ...prev, year: "" }));
                     }
                   }}
                 >
                   <SelectTrigger
                     className={`bg-gray-800 border-gray-700 ${
-                      errors.branch ? "border-red-500" : ""
+                      errors.year ? "border-red-500" : ""
                     }`}
                   >
-                    <SelectValue placeholder="Select your branch" />
+                    <SelectValue placeholder="Select your year" />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-gray-700">
-                    {BRANCH_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
+                    {YEAR_OPTIONS.map((option) => (
+                      <SelectItem
+                        key={option.value}
+                        value={option.value.toString()}
+                      >
                         {option.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.branch && (
-                  <p className="text-xs text-red-400">{errors.branch}</p>
+                {errors.year && (
+                  <p className="text-xs text-red-400">{errors.year}</p>
                 )}
               </div>
+            )}
 
-              {/* Year (hidden for Alumni) */}
-              {!isAlumni && (
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    Year <span className="text-red-400">*</span>
-                  </Label>
-                  <Select
-                    value={year.toString()}
-                    onValueChange={(value) => {
-                      setYear(parseInt(value));
-                      if (errors.year) {
-                        setErrors((prev) => ({ ...prev, year: "" }));
-                      }
-                    }}
-                  >
-                    <SelectTrigger
-                      className={`bg-gray-800 border-gray-700 ${
-                        errors.year ? "border-red-500" : ""
-                      }`}
-                    >
-                      <SelectValue placeholder="Select your year" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
-                      {YEAR_OPTIONS.map((option) => (
-                        <SelectItem
-                          key={option.value}
-                          value={option.value.toString()}
-                        >
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.year && (
-                    <p className="text-xs text-red-400">{errors.year}</p>
-                  )}
-                </div>
+            {/* Phone */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Phone className="h-4 w-4" />
+                Phone Number
+              </Label>
+              <Input
+                type="tel"
+                placeholder="10-digit mobile number"
+                value={phone}
+                onChange={(e) => {
+                  // Only allow digits
+                  const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                  setPhone(value);
+                  if (errors.phone) {
+                    setErrors((prev) => ({ ...prev, phone: "" }));
+                  }
+                }}
+                className={`bg-gray-800 border-gray-700 ${
+                  errors.phone ? "border-red-500" : ""
+                }`}
+              />
+              {errors.phone ? (
+                <p className="text-xs text-red-400">{errors.phone}</p>
+              ) : (
+                <p className="text-xs text-gray-500">
+                  Optional. Enter your 10-digit mobile number.
+                </p>
               )}
+            </div>
+          </CardContent>
+        </Card>
 
-              {/* Phone */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  Phone Number
-                </Label>
-                <Input
-                  type="tel"
-                  placeholder="10-digit mobile number"
-                  value={phone}
-                  onChange={(e) => {
-                    // Only allow digits
-                    const value = e.target.value.replace(/\D/g, "").slice(0, 10);
-                    setPhone(value);
-                    if (errors.phone) {
-                      setErrors((prev) => ({ ...prev, phone: "" }));
-                    }
-                  }}
-                  className={`bg-gray-800 border-gray-700 ${
-                    errors.phone ? "border-red-500" : ""
-                  }`}
-                />
-                {errors.phone ? (
-                  <p className="text-xs text-red-400">{errors.phone}</p>
-                ) : (
-                  <p className="text-xs text-gray-500">
-                    Optional. Enter your 10-digit mobile number.
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Alumni Information (only for alumni users) */}
-          {isAlumni && (
-            <Card className="bg-gray-900 border-gray-800">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Briefcase className="h-5 w-5" />
-                  Alumni Information
-                </CardTitle>
-                <CardDescription>
-                  Professional details visible to current students. Graduation year is required.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Graduation Year */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <GraduationCap className="h-4 w-4" />
-                    Graduation Year <span className="text-red-400">*</span>
-                  </Label>
-                  <Select
-                    value={graduationYear?.toString() || ""}
-                    onValueChange={(value) => {
-                      setGraduationYear(parseInt(value));
-                      if (errors.graduationYear) {
-                        setErrors((prev) => ({ ...prev, graduationYear: "" }));
-                      }
-                    }}
-                  >
-                    <SelectTrigger
-                      className={`bg-gray-800 border-gray-700 ${
-                        errors.graduationYear ? "border-red-500" : ""
-                      }`}
-                    >
-                      <SelectValue placeholder="Select graduation year" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700 max-h-48">
-                      {GRADUATION_YEAR_OPTIONS.map((option) => (
-                        <SelectItem
-                          key={option.value}
-                          value={option.value.toString()}
-                        >
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.graduationYear && (
-                    <p className="text-xs text-red-400">{errors.graduationYear}</p>
-                  )}
-                </div>
-
-                {/* Company and Position in a row */}
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      <Briefcase className="h-4 w-4" />
-                      Company
-                    </Label>
-                    <Input
-                      placeholder="e.g. Google, Microsoft"
-                      value={company}
-                      onChange={(e) => setCompany(e.target.value)}
-                      className="bg-gray-800 border-gray-700"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Position</Label>
-                    <Input
-                      placeholder="e.g. Software Engineer"
-                      value={position}
-                      onChange={(e) => setPosition(e.target.value)}
-                      className="bg-gray-800 border-gray-700"
-                    />
-                  </div>
-                </div>
-
-                {/* Location */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    Location
-                  </Label>
-                  <Input
-                    placeholder="e.g. Bangalore, India"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    className="bg-gray-800 border-gray-700"
-                  />
-                </div>
-
-                {/* LinkedIn */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Linkedin className="h-4 w-4" />
-                    LinkedIn Profile
-                  </Label>
-                  <Input
-                    type="url"
-                    placeholder="https://linkedin.com/in/yourprofile"
-                    value={linkedIn}
-                    onChange={(e) => setLinkedIn(e.target.value)}
-                    className="bg-gray-800 border-gray-700"
-                  />
-                </div>
-
-                {/* Bio */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    Bio
-                  </Label>
-                  <textarea
-                    placeholder="Tell students about your journey, achievements, and advice..."
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    rows={4}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Optional. Share your experience and tips for current students.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Competitive Programming Handles */}
+        {/* Alumni Information (only for alumni users) */}
+        {isAlumni && (
           <Card className="bg-gray-900 border-gray-800">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
-                <Code className="h-5 w-5" />
-                Competitive Programming Handles
+                <Briefcase className="h-5 w-5" />
+                Alumni Information
               </CardTitle>
               <CardDescription>
-                Add your usernames on various platforms. All fields are
-                optional.
+                Professional details visible to current students. Graduation year is required.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              {/* Graduation Year */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <GraduationCap className="h-4 w-4" />
+                  Graduation Year <span className="text-red-400">*</span>
+                </Label>
+                <Select
+                  value={graduationYear?.toString() || ""}
+                  onValueChange={(value) => {
+                    setGraduationYear(parseInt(value));
+                    if (errors.graduationYear) {
+                      setErrors((prev) => ({ ...prev, graduationYear: "" }));
+                    }
+                  }}
+                >
+                  <SelectTrigger
+                    className={`bg-gray-800 border-gray-700 ${
+                      errors.graduationYear ? "border-red-500" : ""
+                    }`}
+                  >
+                    <SelectValue placeholder="Select graduation year" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700 max-h-48">
+                    {GRADUATION_YEAR_OPTIONS.map((option) => (
+                      <SelectItem
+                        key={option.value}
+                        value={option.value.toString()}
+                      >
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.graduationYear && (
+                  <p className="text-xs text-red-400">{errors.graduationYear}</p>
+                )}
+              </div>
+
+              {/* Company and Position in a row */}
               <div className="grid gap-4 md:grid-cols-2">
-                {CP_PLATFORMS.map((platform) => (
-                  <div key={platform.key} className="space-y-2">
-                    <Label htmlFor={platform.key}>{platform.label}</Label>
-                    <Input
-                      id={platform.key}
-                      placeholder={platform.placeholder}
-                      value={handles[platform.key as keyof Handles] || ""}
-                      onChange={(e) =>
-                        handleHandleChange(platform.key, e.target.value)
-                      }
-                      className="bg-gray-800 border-gray-700"
-                    />
-                  </div>
-                ))}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Briefcase className="h-4 w-4" />
+                    Company
+                  </Label>
+                  <Input
+                    placeholder="e.g. Google, Microsoft"
+                    value={company}
+                    onChange={(e) => setCompany(e.target.value)}
+                    className="bg-gray-800 border-gray-700"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Position</Label>
+                  <Input
+                    placeholder="e.g. Software Engineer"
+                    value={position}
+                    onChange={(e) => setPosition(e.target.value)}
+                    className="bg-gray-800 border-gray-700"
+                  />
+                </div>
+              </div>
+
+              {/* Location */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Location
+                </Label>
+                <Input
+                  placeholder="e.g. Bangalore, India"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="bg-gray-800 border-gray-700"
+                />
+              </div>
+
+              {/* LinkedIn */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Linkedin className="h-4 w-4" />
+                  LinkedIn Profile
+                </Label>
+                <Input
+                  type="url"
+                  placeholder="https://linkedin.com/in/yourprofile"
+                  value={linkedIn}
+                  onChange={(e) => setLinkedIn(e.target.value)}
+                  className="bg-gray-800 border-gray-700"
+                />
+              </div>
+
+              {/* Bio */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Bio
+                </Label>
+                <textarea
+                  placeholder="Tell students about your journey, achievements, and advice..."
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  rows={4}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500">
+                  Optional. Share your experience and tips for current students.
+                </p>
               </div>
             </CardContent>
           </Card>
+        )}
 
-          {/* Submit Button */}
-          <div className="flex justify-end">
-            <Button
-              type="submit"
-              disabled={saving || !name || !branch || (!isAlumni && !year) || (isAlumni && !graduationYear)}
-              className="gap-2 min-w-[150px]"
-            >
-              {saving ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4" />
-                  {isFirstTime ? "Save & Continue" : "Save Changes"}
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+        {/* Competitive Programming Handles */}
+        <Card className="bg-gray-900 border-gray-800">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Code className="h-5 w-5" />
+              Competitive Programming Handles
+            </CardTitle>
+            <CardDescription>
+              Add your usernames on various platforms. All fields are
+              optional.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2">
+              {CP_PLATFORMS.map((platform) => (
+                <div key={platform.key} className="space-y-2">
+                  <Label htmlFor={platform.key}>{platform.label}</Label>
+                  <Input
+                    id={platform.key}
+                    placeholder={platform.placeholder}
+                    value={handles[platform.key as keyof Handles] || ""}
+                    onChange={(e) =>
+                      handleHandleChange(platform.key, e.target.value)
+                    }
+                    className="bg-gray-800 border-gray-700"
+                  />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Submit Button */}
+        <div className="flex justify-end">
+          <Button
+            type="submit"
+            disabled={saving || !name || !branch || (!isAlumni && !year) || (isAlumni && !graduationYear)}
+            className="gap-2 min-w-[150px]"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                {isFirstTime ? "Save & Continue" : "Save Changes"}
+              </>
+            )}
+          </Button>
+        </div>
+      </>
+    );
+  }
 }

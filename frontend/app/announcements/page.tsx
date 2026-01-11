@@ -1,41 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
-import { Button } from "@/components/ui/button";
+import { DashboardLayout } from "@/components/dashboard-layout";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ArrowLeft, Megaphone, Pin } from "lucide-react";
-import Link from "next/link";
+import { Megaphone, Pin } from "lucide-react";
 import { getAnnouncements, Announcement } from "@/lib/adminService";
 
 export default function AnnouncementsPage() {
   const isAuthenticated = useAuthStore((state) => !!state.token);
   const hasHydrated = useAuthStore((state) => state._hasHydrated);
   const hasProfile = useAuthStore((state) => state.hasProfile);
-  const router = useRouter();
 
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!hasHydrated) return;
-
-    if (!isAuthenticated) {
-      router.push("/login");
-      return;
-    }
-
-    if (hasProfile === false) {
-      router.push("/profile");
-      return;
-    }
-  }, [isAuthenticated, hasHydrated, hasProfile, router]);
 
   useEffect(() => {
     const fetchAnnouncements = async () => {
@@ -63,15 +46,10 @@ export default function AnnouncementsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard">
-            <Button variant="outline" size="icon">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
+    <DashboardLayout>
+      <div className="p-8">
+        <div className="max-w-4xl mx-auto space-y-6">
+          {/* Header */}
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-primary flex items-center gap-3">
               <Megaphone className="h-8 w-8 text-yellow-500" />
@@ -81,7 +59,6 @@ export default function AnnouncementsPage() {
               Stay updated with the latest news and updates
             </p>
           </div>
-        </div>
 
         {/* Announcements List */}
         {announcements.length === 0 ? (
@@ -141,7 +118,8 @@ export default function AnnouncementsPage() {
             ))}
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

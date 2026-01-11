@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { DashboardLayout } from "@/components/dashboard-layout";
 import {
   getSessions,
   registerForSession,
@@ -21,7 +20,6 @@ import {
   SessionStatus,
 } from "@/lib/sessionService";
 import {
-  ArrowLeft,
   Calendar,
   Clock,
   ExternalLink,
@@ -183,14 +181,6 @@ export default function SessionsPage() {
 
   const { user, token } = useAuthStore();
   const isAuthenticated = !!token;
-  const hasHydrated = useAuthStore((state) => state._hasHydrated);
-  const router = useRouter();
-
-  useEffect(() => {
-    if (hasHydrated && !isAuthenticated) {
-      router.push("/login");
-    }
-  }, [isAuthenticated, hasHydrated, router]);
 
   useEffect(() => {
     const fetchSessions = async () => {
@@ -254,36 +244,25 @@ export default function SessionsPage() {
       return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
 
-  if (!hasHydrated || loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
-        <div className="animate-pulse text-xl">Loading Sessions...</div>
-      </div>
-    );
-  }
-
-  if (!user) return null;
-
   return (
-    <div className="min-h-screen bg-background text-foreground p-8">
+    <DashboardLayout>
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-4xl font-bold tracking-tight text-primary">
-              Sessions
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Join live sessions or register for upcoming ones.
-            </p>
-          </div>
-          <Link href="/dashboard">
-            <Button variant="outline" className="gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              Back to Dashboard
-            </Button>
-          </Link>
+        <div>
+          <h1 className="text-4xl font-bold tracking-tight text-primary">
+            Sessions
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Join live sessions or register for upcoming ones.
+          </p>
         </div>
+
+        {/* Loading */}
+        {loading && (
+          <div className="text-center py-12">
+            <div className="animate-pulse text-xl">Loading Sessions...</div>
+          </div>
+        )}
 
         {/* Error Banner */}
         {error && (
@@ -293,7 +272,7 @@ export default function SessionsPage() {
         )}
 
         {/* Empty State */}
-        {sessions.length === 0 && !error && (
+        {!loading && sessions.length === 0 && !error && (
           <Card className="bg-card border-border">
             <CardContent className="py-12 text-center">
               <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -308,7 +287,7 @@ export default function SessionsPage() {
         )}
 
         {/* Upcoming Sessions */}
-        {upcomingSessions.length > 0 && (
+        {!loading && upcomingSessions.length > 0 && (
           <section>
             <h2 className="text-2xl font-semibold text-foreground mb-4">
               Upcoming Sessions
@@ -318,7 +297,7 @@ export default function SessionsPage() {
                 <SessionCard
                   key={session.id}
                   session={session}
-                  userId={user.id}
+                  userId={user?.id}
                   onRegister={handleRegister}
                   registering={registering}
                 />
@@ -328,19 +307,19 @@ export default function SessionsPage() {
         )}
 
         {/* No Upcoming Sessions Message */}
-        {upcomingSessions.length === 0 && pastSessions.length > 0 && (
+        {!loading && upcomingSessions.length === 0 && pastSessions.length > 0 && (
           <div className="text-center py-8 border border-border rounded-lg bg-card">
             <p className="text-muted-foreground">No upcoming sessions</p>
           </div>
         )}
 
         {/* Divider */}
-        {upcomingSessions.length > 0 && pastSessions.length > 0 && (
+        {!loading && upcomingSessions.length > 0 && pastSessions.length > 0 && (
           <hr className="border-border" />
         )}
 
         {/* Past Sessions */}
-        {pastSessions.length > 0 && (
+        {!loading && pastSessions.length > 0 && (
           <section>
             <h2 className="text-2xl font-semibold text-foreground mb-4">
               Past Sessions
@@ -350,7 +329,7 @@ export default function SessionsPage() {
                 <SessionCard
                   key={session.id}
                   session={session}
-                  userId={user.id}
+                  userId={user?.id}
                   onRegister={handleRegister}
                   registering={registering}
                 />
@@ -359,6 +338,6 @@ export default function SessionsPage() {
           </section>
         )}
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

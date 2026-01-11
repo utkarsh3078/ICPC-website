@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useBlogStore } from "@/store/useBlogStore";
+import { DashboardLayout } from "@/components/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -54,14 +55,6 @@ export default function BlogViewPage() {
   const [editingCommentContent, setEditingCommentContent] = useState("");
   const [deletingBlog, setDeletingBlog] = useState(false);
 
-  // Auth check
-  useEffect(() => {
-    if (!hasHydrated) return;
-    if (!isAuthenticated) {
-      router.push("/login");
-    }
-  }, [hasHydrated, isAuthenticated, router]);
-
   // Fetch blog on mount
   useEffect(() => {
     if (isAuthenticated && hasHydrated && blogId) {
@@ -69,14 +62,6 @@ export default function BlogViewPage() {
     }
     return () => clearCurrentBlog();
   }, [isAuthenticated, hasHydrated, blogId, fetchBlog, clearCurrentBlog]);
-
-  if (!hasHydrated || !isAuthenticated) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="animate-pulse text-xl text-foreground">Loading...</div>
-      </div>
-    );
-  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -144,32 +129,36 @@ export default function BlogViewPage() {
 
   if (currentBlogLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
     );
   }
 
   if (currentBlogError) {
     return (
-      <div className="min-h-screen bg-background text-foreground p-8">
-        <div className="max-w-4xl mx-auto">
-          <Card className="bg-red-500/10 border-red-500/30">
-            <CardContent className="py-12 text-center">
-              <AlertCircle className="h-12 w-12 mx-auto text-red-400 mb-4" />
-              <h2 className="text-xl font-semibold text-red-400 mb-2">
-                {currentBlogError}
-              </h2>
-              <p className="text-muted-foreground mb-4">
-                The blog you're looking for might not exist or you don't have permission to view it.
-              </p>
-              <Link href="/blog">
-                <Button variant="outline">Back to Blogs</Button>
-              </Link>
-            </CardContent>
-          </Card>
+      <DashboardLayout>
+        <div className="p-8">
+          <div className="max-w-4xl mx-auto">
+            <Card className="bg-red-500/10 border-red-500/30">
+              <CardContent className="py-12 text-center">
+                <AlertCircle className="h-12 w-12 mx-auto text-red-400 mb-4" />
+                <h2 className="text-xl font-semibold text-red-400 mb-2">
+                  {currentBlogError}
+                </h2>
+                <p className="text-muted-foreground mb-4">
+                  The blog you're looking for might not exist or you don't have permission to view it.
+                </p>
+                <Link href="/blog">
+                  <Button variant="outline">Back to Blogs</Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
@@ -178,48 +167,49 @@ export default function BlogViewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-8">
-      <div className="max-w-4xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push("/blog")}
-            className="gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Blogs
-          </Button>
-          {(canEdit || canDelete) && (
-            <div className="flex gap-2">
-              {canEdit && (
-                <Link href={`/blog/edit/${blogId}`}>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Pencil className="h-4 w-4" />
-                    Edit
+    <DashboardLayout>
+      <div className="p-8">
+        <div className="max-w-4xl mx-auto space-y-8">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push("/blog")}
+              className="gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Blogs
+            </Button>
+            {(canEdit || canDelete) && (
+              <div className="flex gap-2">
+                {canEdit && (
+                  <Link href={`/blog/edit/${blogId}`}>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Pencil className="h-4 w-4" />
+                      Edit
+                    </Button>
+                  </Link>
+                )}
+                {canDelete && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="gap-2"
+                    onClick={handleDeleteBlog}
+                    disabled={deletingBlog}
+                  >
+                    {deletingBlog ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                    Delete
                   </Button>
-                </Link>
-              )}
-              {canDelete && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="gap-2"
-                  onClick={handleDeleteBlog}
-                  disabled={deletingBlog}
-                >
-                  {deletingBlog ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                  Delete
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
+                )}
+              </div>
+            )}
+          </div>
 
         {/* Blog Content */}
         <Card className="bg-white/5 backdrop-blur-xl border border-white/10">
@@ -443,7 +433,8 @@ export default function BlogViewPage() {
             )}
           </CardContent>
         </Card>
+        </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

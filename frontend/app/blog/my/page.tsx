@@ -5,13 +5,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useBlogStore } from "@/store/useBlogStore";
+import { DashboardLayout } from "@/components/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import {
   ArrowLeft,
@@ -42,28 +40,12 @@ export default function MyBlogsPage() {
     deleteBlog,
   } = useBlogStore();
 
-  // Auth check
-  useEffect(() => {
-    if (!hasHydrated) return;
-    if (!isAuthenticated) {
-      router.push("/login");
-    }
-  }, [hasHydrated, isAuthenticated, router]);
-
   // Fetch blogs on mount
   useEffect(() => {
     if (isAuthenticated && hasHydrated) {
       fetchMyBlogs();
     }
   }, [isAuthenticated, hasHydrated, fetchMyBlogs]);
-
-  if (!hasHydrated || !isAuthenticated) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="animate-pulse text-xl text-foreground">Loading...</div>
-      </div>
-    );
-  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -111,36 +93,37 @@ export default function MyBlogsPage() {
   const rejectedCount = myBlogs.filter((b) => b.status === "REJECTED").length;
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-8">
-      <div className="max-w-5xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => router.push("/blog")}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight text-primary">
-                My Blogs
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Manage your blog posts
-              </p>
-            </div>
-          </div>
-          {(user?.role === "STUDENT" || user?.role === "ALUMNI") && (
-            <Link href="/blog/write">
-              <Button className="gap-2">
-                <PenSquare className="h-4 w-4" />
-                Write New Blog
+    <DashboardLayout>
+      <div className="p-8">
+        <div className="max-w-5xl mx-auto space-y-8">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => router.push("/blog")}
+              >
+                <ArrowLeft className="h-5 w-5" />
               </Button>
-            </Link>
-          )}
-        </div>
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight text-primary">
+                  My Blogs
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  Manage your blog posts
+                </p>
+              </div>
+            </div>
+            {(user?.role === "STUDENT" || user?.role === "ALUMNI") && (
+              <Link href="/blog/write">
+                <Button className="gap-2">
+                  <PenSquare className="h-4 w-4" />
+                  Write New Blog
+                </Button>
+              </Link>
+            )}
+          </div>
 
         {/* Stats */}
         <div className="grid gap-4 md:grid-cols-3">
@@ -320,7 +303,8 @@ export default function MyBlogsPage() {
             })}
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }
