@@ -28,6 +28,7 @@ COPY prisma ./prisma
 RUN npx prisma generate
 
 COPY --from=builder /usr/src/app/dist ./dist
+COPY --from=builder /usr/src/app/swagger.json ./swagger.json
 
 ENV NODE_ENV=production
 EXPOSE 5000
