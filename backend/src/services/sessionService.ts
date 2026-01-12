@@ -1,7 +1,28 @@
 import prisma from '../models/prismaClient';
 
-export const createSession = async (data: any) => prisma.session.create({ data });
-export const updateSession = async (id: string, data: any) => prisma.session.update({ where: { id }, data });
+export const createSession = async (data: any) => {
+	// Clean up empty strings and convert date to proper format
+	const cleanedData: any = {
+		title: data.title,
+		meetLink: data.meetLink,
+		details: data.details || null,
+		date: data.date ? new Date(data.date) : null,
+	};
+	return prisma.session.create({ data: cleanedData });
+};
+
+export const updateSession = async (id: string, data: any) => {
+	// Clean up empty strings and convert date to proper format
+	const cleanedData: any = {};
+	
+	if (data.title !== undefined) cleanedData.title = data.title;
+	if (data.meetLink !== undefined) cleanedData.meetLink = data.meetLink;
+	if (data.details !== undefined) cleanedData.details = data.details || null;
+	if (data.date !== undefined) cleanedData.date = data.date ? new Date(data.date) : null;
+	
+	return prisma.session.update({ where: { id }, data: cleanedData });
+};
+
 export const deleteSession = async (id: string) => prisma.session.delete({ where: { id } });
 export const listSessions = async () => prisma.session.findMany({ orderBy: { date: 'desc' } });
 export const registerForSession = async (sessionId: string, userId: string) => {

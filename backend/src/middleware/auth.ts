@@ -69,3 +69,35 @@ export const isAlumni = (
     return res.status(403).json({ message: "Alumni only" });
   next();
 };
+
+// Optional authentication - allows both authenticated and unauthenticated access
+// If token is provided and valid, req.user will be set; otherwise, proceeds without user
+export const optionalAuth = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  const auth = req.headers.authorization;
+  
+  // No token provided - proceed without user
+  if (!auth || !auth.toLowerCase().startsWith("bearer ")) {
+    return next();
+  }
+
+  const token = auth.split(" ")[1];
+
+  try {
+    const payload = jwt.verify(token, JWT_SECRET) as { id?: string } | null;
+    const user = await prisma.user.findUnique({
+      where: { id: payload?.id as string },
+    });
+
+    if (user && user.approved) {
+      req.user = user;
+    }
+  } catch (err) {
+    // Invalid token - proceed without user (don't fail the request)
+  }
+
+  next();
+};

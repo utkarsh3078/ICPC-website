@@ -13,7 +13,7 @@ function startOfSemester(d: Date) {
 
 export const leaderboard = async (period: 'month' | 'semester' | 'all' = 'all') => {
   const now = new Date();
-  let where: any = { verified: true };
+  let where: any = { status: 'VERIFIED' };
   if (period === 'month') where.createdAt = { gte: startOfMonth(now) };
   if (period === 'semester') where.createdAt = { gte: startOfSemester(now) };
 
@@ -49,7 +49,7 @@ export const listBadges = async () => {
 
 export const earnedBadgesForUser = async (userId: string) => {
   // simple implementation: check first_submit and basic leaderboard membership
-  const subsCount = await prisma.submission.count({ where: { userId, verified: true } });
+  const subsCount = await prisma.submission.count({ where: { userId, status: 'VERIFIED' } });
   const earned: any[] = [];
   const rules: any[] = badges as any;
   for (const r of rules) {

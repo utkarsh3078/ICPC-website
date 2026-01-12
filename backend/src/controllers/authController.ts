@@ -1,7 +1,7 @@
-import { Request, Response } from 'express';
-import * as authService from '../services/authService';
-import { success, fail } from '../utils/response';
-import { validationResult } from 'express-validator';
+import { Request, Response } from "express";
+import * as authService from "../services/authService";
+import { success, fail } from "../utils/response";
+import { validationResult } from "express-validator";
 
 export const register = async (req: Request, res: Response) => {
   const errors = validationResult(req);
@@ -25,6 +25,38 @@ export const approve = async (req: Request, res: Response) => {
   }
 };
 
+export const listUsers = async (req: Request, res: Response) => {
+  try {
+    const users = await authService.getAllUsers();
+    success(res, users);
+  } catch (err: any) {
+    fail(res, err.message);
+  }
+};
+
+export const listPendingUsers = async (req: Request, res: Response) => {
+  try {
+    const users = await authService.getPendingUsers();
+    success(res, users);
+  } catch (err: any) {
+    fail(res, err.message);
+  }
+};
+
+export const updateRole = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+    if (!["STUDENT", "ADMIN", "ALUMNI"].includes(role)) {
+      return fail(res, "Invalid role", 400);
+    }
+    const user = await authService.updateUserRole(id, role);
+    success(res, user);
+  } catch (err: any) {
+    fail(res, err.message);
+  }
+};
+
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -32,5 +64,17 @@ export const login = async (req: Request, res: Response) => {
     success(res, data);
   } catch (err: any) {
     fail(res, err.message, 401);
+  }
+};
+
+export const deleteUser = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const requestingUser = (req as any).user;
+
+    const result = await authService.deleteUser(id, requestingUser.id);
+    success(res, result);
+  } catch (err: any) {
+    fail(res, err.message, 400);
   }
 };

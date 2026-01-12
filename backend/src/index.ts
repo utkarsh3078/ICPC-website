@@ -1,6 +1,6 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { reqLogger, logger } from "./utils/logger";
@@ -21,8 +21,6 @@ import judgeRoutes from "./routes/judgeRoutes";
 import { errorHandler } from "./utils/errorHandler";
 import { startJobs } from "./jobs/cron";
 
-dotenv.config();
-
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -37,7 +35,7 @@ app.use(reqLogger as any);
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 200,
+    max: process.env.NODE_ENV === "production" ? 200 : 1000, // Higher limit for dev
   })
 );
 

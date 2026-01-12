@@ -26,14 +26,93 @@ export const approveUser = async (userId: string) => {
   });
 };
 
+export const getAllUsers = async () => {
+  return prisma.user.findMany({
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      approved: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+};
+
+export const getPendingUsers = async () => {
+  return prisma.user.findMany({
+    where: { approved: false },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      approved: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+};
+
+export const updateUserRole = async (userId: string, role: string) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { role: role as any },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      approved: true,
+    },
+  });
+};
+
 export const login = async (email: string, password: string) => {
+  console.log(`Attempting login for ${email}`);
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) throw new Error("Invalid credentials");
+  if (!user) {
+    console.log("User not found");
+    throw new Error("Invalid credentials");
+  }
   const ok = await bcrypt.compare(password, user.password);
-  if (!ok) throw new Error("Invalid credentials");
-  if (!user.approved) throw new Error("User not approved yet");
+  if (!ok) {
+    console.log("Password mismatch");
+    throw new Error("Invalid credentials");
+  }
+  if (!user.approved) {
+    console.log("User not approved");
+    throw new Error("User not approved yet");
+  }
   const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
     expiresIn: "7d",
   });
   return { token, user };
+};
+
+export const deleteUser = async (userId: string, requestingUserId: string) => {
+  // Prevent self-deletion
+  if (userId === requestingUserId) {
+    throw new Error("Cannot delete your own account");
+  }
+
+  // Check if target user exists and get their role
+  const targetUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true, email: true },
+  });
+
+  if (!targetUser) {
+    throw new Error("User not found");
+  }
+
+  // Prevent deleting admin users
+  if (targetUser.role === "ADMIN") {
+    throw new Error("Cannot delete admin users");
+  }
+
+  // Delete user (cascades will handle Profile, Submissions, ContestSubmissions, Blogs)
+  await prisma.user.delete({
+    where: { id: userId },
+  });
+
+  return { message: `User ${targetUser.email} deleted successfully` };
 };

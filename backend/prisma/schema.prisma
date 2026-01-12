@@ -8,99 +8,117 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  role      Role     @default(STUDENT)
-  approved  Boolean  @default(false)
-  profile   Profile?
-  submissions Submission[]
-  blogs       Blog[]
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  password           String
+  role               Role                @default(STUDENT)
+  approved           Boolean             @default(false)
+  createdAt          DateTime            @default(now())
+  blogs              Blog[]
   contestSubmissions ContestSubmission[]
-  createdAt DateTime @default(now())
+  profile            Profile?
+  submissions        Submission[]
 }
 
 model Profile {
-  id       String  @id @default(cuid())
-  user     User    @relation(fields: [userId], references: [id])
-  userId   String  @unique
-  name     String
-  branch   String
-  year     Int
-  contact  String
-  handles  Json?
+  id      String @id @default(cuid())
+  userId  String @unique
+  name    String
+  branch  String
+  year    Int
+  contact String
+  handles Json?
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Task {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
   title       String
   description String
-  points      Int      @default(0)
-  assignedTo  String?
+  points      Int          @default(0)
+  assignedTo  Json?        // String[] - null = open to all, array = specific user IDs
   dueDate     DateTime?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime     @default(now())
   submissions Submission[]
 }
 
 model Submission {
-  id        String   @id @default(cuid())
-  task      Task     @relation(fields: [taskId], references: [id])
+  id        String           @id @default(cuid())
   taskId    String
-  user      User     @relation(fields: [userId], references: [id])
   userId    String
   link      String
-  verified  Boolean  @default(false)
-  points    Int      @default(0)
-  createdAt DateTime @default(now())
+  status    SubmissionStatus @default(PENDING)
+  points    Int              @default(0)
+  createdAt DateTime         @default(now())
+  task      Task             @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum SubmissionStatus {
+  PENDING
+  VERIFIED
+  REJECTED
 }
 
 model Contest {
-  id        String   @id @default(cuid())
-  title     String
-  problems  Json?
-  timer     Int?
-  results   Json?
-  createdAt DateTime @default(now())
+  id          String              @id @default(cuid())
+  title       String
+  problems    Json?
+  timer       Int
+  results     Json?
+  createdAt   DateTime            @default(now())
+  startTime   DateTime
   submissions ContestSubmission[]
 }
 
 model Session {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   title     String
   details   String?
   date      DateTime?
   attendees Json?
   summary   String?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
+  meetLink  String
 }
 
 model Blog {
   id        String   @id @default(cuid())
   authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
   title     String
   content   String
   approved  Boolean  @default(false)
   comments  Json?
   createdAt DateTime @default(now())
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
 }
 
 model ContestSubmission {
   id         String   @id @default(cuid())
-  contest    Contest  @relation(fields: [contestId], references: [id])
   contestId  String
   problemIdx Int
-  user       User     @relation(fields: [userId], references: [id])
   userId     String
   token      String?
   result     Json?
   status     String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  tokens     String[]
+  contest    Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum Role {
   STUDENT
   ADMIN
   ALUMNI
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
