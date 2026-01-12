@@ -1,5 +1,5 @@
 # Multi-stage build for smaller production image
-FROM node:20-slim AS builder
+FROM node:20-bookworm-slim AS builder
 
 WORKDIR /usr/src/app
 
@@ -16,8 +16,11 @@ COPY . .
 RUN npm run build
 
 # production image
-FROM node:20-slim AS runtime
+FROM node:20-bookworm-slim AS runtime
 WORKDIR /usr/src/app
+
+# Install OpenSSL for Prisma
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 # copy only what we need
 COPY package*.json ./
