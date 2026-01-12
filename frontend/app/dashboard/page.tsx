@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTaskStore } from "@/store/useTaskStore";
 import { Button } from "@/components/ui/button";
@@ -12,19 +11,17 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { DashboardLayout } from "@/components/dashboard-layout";
 import api from "@/lib/axios";
 import {
   Calendar,
   Trophy,
   User as UserIcon,
   Code,
-  LogOut,
   Play,
   ExternalLink,
   CheckSquare,
-  Medal,
   ArrowRight,
-  Settings,
   Megaphone,
 } from "lucide-react";
 import Link from "next/link";
@@ -60,11 +57,8 @@ interface Submission {
 
 export default function DashboardPage() {
   const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
   const isAuthenticated = useAuthStore((state) => !!state.token);
-  const hasHydrated = useAuthStore((state) => state._hasHydrated);
   const hasProfile = useAuthStore((state) => state.hasProfile);
-  const router = useRouter();
 
   // Task store
   const {
@@ -82,21 +76,6 @@ export default function DashboardPage() {
   const [nextSession, setNextSession] = useState<Session | null>(null);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!hasHydrated) return;
-
-    if (!isAuthenticated) {
-      router.push("/login");
-      return;
-    }
-
-    // Redirect to profile if hasProfile is explicitly false
-    if (hasProfile === false) {
-      router.push("/profile");
-      return;
-    }
-  }, [isAuthenticated, hasHydrated, hasProfile, router]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -159,72 +138,29 @@ export default function DashboardPage() {
     fetchData();
   }, [isAuthenticated, hasProfile, fetchTasks, fetchUserPoints, fetchLeaderboard]);
 
-  // Show loading if not hydrated, OR hasProfile not confirmed, OR data still loading
-  if (!hasHydrated || hasProfile !== true || loading) {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
-        <div className="animate-pulse text-xl">Loading Dashboard...</div>
-      </div>
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="animate-pulse text-xl">Loading Dashboard...</div>
+        </div>
+      </DashboardLayout>
     );
   }
 
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-8">
+    <DashboardLayout>
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-4xl font-bold tracking-tight text-primary">
-              Welcome back, {profile?.name || user.email}
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Here's what's happening with your competitive programming journey.
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Link href="/contests">
-              <Button variant="outline" className="gap-2">
-                <Play className="w-4 h-4" />
-                Contests
-              </Button>
-            </Link>
-            <Link href="/tasks">
-              <Button variant="outline" className="gap-2">
-                <CheckSquare className="w-4 h-4" />
-                Tasks
-              </Button>
-            </Link>
-            <Link href="/sessions">
-              <Button variant="outline" className="gap-2">
-                <Calendar className="w-4 h-4" />
-                Sessions
-              </Button>
-            </Link>
-            <Link href="/profile">
-              <Button variant="outline" className="gap-2">
-                <Settings className="w-4 h-4" />
-                Profile
-              </Button>
-            </Link>
-            {user.role === "ADMIN" && (
-              <Button onClick={() => router.push("/admin")} variant="outline">
-                Admin Dashboard
-              </Button>
-            )}
-            <Button
-              onClick={() => {
-                logout();
-                router.push("/login");
-              }}
-              variant="destructive"
-              className="gap-2"
-            >
-              <LogOut className="w-4 h-4" />
-              Logout
-            </Button>
-          </div>
+        <div>
+          <h1 className="text-4xl font-bold tracking-tight text-primary">
+            Welcome back, {profile?.name || user.email}
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Here's what's happening with your competitive programming journey.
+          </p>
         </div>
 
         {/* Announcements Banner */}
@@ -678,6 +614,6 @@ export default function DashboardPage() {
           </Card>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

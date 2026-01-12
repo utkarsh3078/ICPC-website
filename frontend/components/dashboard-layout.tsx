@@ -1,0 +1,82 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/useAuthStore";
+import { AppSidebar } from "@/components/app-sidebar";
+import api from "@/lib/axios";
+
+interface DashboardLayoutProps {
+  children: React.ReactNode;
+  requireProfile?: boolean;
+}
+
+export function DashboardLayout({ children, requireProfile = true }: DashboardLayoutProps) {
+  const user = useAuthStore((state) => state.user);
+  const isAuthenticated = useAuthStore((state) => !!state.token);
+  const hasHydrated = useAuthStore((state) => state._hasHydrated);
+  const hasProfile = useAuthStore((state) => state.hasProfile);
+  const router = useRouter();
+  
+  const [userName, setUserName] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Auth check
+  useEffect(() => {
+    if (!hasHydrated) return;
+
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+
+    // Redirect to profile if hasProfile is explicitly false (and requireProfile is true)
+    if (requireProfile && hasProfile === false) {
+      router.push("/profile");
+      return;
+    }
+
+    setIsLoading(false);
+  }, [isAuthenticated, hasHydrated, hasProfile, requireProfile, router]);
+
+  // Fetch user name
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!isAuthenticated || hasProfile !== true) return;
+      
+      try {
+        const res = await api.get("/profile");
+        setUserName(res.data.data?.name || user?.email?.split("@")[0] || "User");
+      } catch {
+        setUserName(user?.email?.split("@")[0] || "User");
+      }
+    };
+
+    fetchProfile();
+  }, [isAuthenticated, hasProfile, user?.email]);
+
+  // Loading state
+  if (!hasHydrated || isLoading || (requireProfile && hasProfile !== true)) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
+        <div className="animate-pulse text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-background">
+      {/* Sidebar */}
+      <AppSidebar userName={userName || user.email?.split("@")[0] || "User"} />
+      
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="min-h-screen bg-background text-foreground">
+          {children}
+        </div>
+      </main>
+    </div>
+  );
+}
