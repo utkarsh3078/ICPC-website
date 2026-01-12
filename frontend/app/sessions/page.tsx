@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Button } from "@/components/ui/button";
 import {
@@ -80,6 +80,40 @@ function SessionCard({ session, userId, onRegister, registering }: SessionCardPr
   const isRegistered = userId && session.attendees?.includes(userId);
   const isRegistering = registering === session.id;
 
+  // Expandable text state
+  const [expanded, setExpanded] = useState(false);
+  const [needsExpansion, setNeedsExpansion] = useState(false);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const detailsRef = useRef<HTMLParagraphElement>(null);
+  const summaryRef = useRef<HTMLParagraphElement>(null);
+
+  // Check if any text is truncated
+  useEffect(() => {
+    const checkTruncation = () => {
+      const isTitleTruncated = titleRef.current
+        ? titleRef.current.scrollHeight > titleRef.current.clientHeight
+        : false;
+      const isDetailsTruncated = detailsRef.current
+        ? detailsRef.current.scrollHeight > detailsRef.current.clientHeight
+        : false;
+      const isSummaryTruncated = summaryRef.current
+        ? summaryRef.current.scrollHeight > summaryRef.current.clientHeight
+        : false;
+
+      setNeedsExpansion(isTitleTruncated || isDetailsTruncated || isSummaryTruncated);
+    };
+
+    // Small delay to ensure DOM is rendered
+    const timer = setTimeout(checkTruncation, 100);
+    return () => clearTimeout(timer);
+  }, [session.title, session.details, session.summary]);
+
+  const toggleExpand = () => {
+    if (needsExpansion) {
+      setExpanded(!expanded);
+    }
+  };
+
   const handleJoin = () => {
     window.open(session.meetLink, "_blank", "noopener,noreferrer");
   };
@@ -92,7 +126,13 @@ function SessionCard({ session, userId, onRegister, registering }: SessionCardPr
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-lg text-card-foreground line-clamp-1">
+          <CardTitle 
+            ref={titleRef}
+            onClick={toggleExpand}
+            className={`text-lg text-card-foreground transition-all duration-300 ease-in-out ${
+              expanded ? '' : 'line-clamp-1'
+            } ${needsExpansion ? 'cursor-pointer' : ''}`}
+          >
             {session.title}
           </CardTitle>
           <span
@@ -102,7 +142,13 @@ function SessionCard({ session, userId, onRegister, registering }: SessionCardPr
           </span>
         </div>
         {session.details && (
-          <CardDescription className="text-muted-foreground line-clamp-2 mt-1">
+          <CardDescription 
+            ref={detailsRef}
+            onClick={toggleExpand}
+            className={`text-muted-foreground mt-1 transition-all duration-300 ease-in-out ${
+              expanded ? '' : 'line-clamp-2'
+            } ${needsExpansion ? 'cursor-pointer' : ''}`}
+          >
             {session.details}
           </CardDescription>
         )}
@@ -130,12 +176,29 @@ function SessionCard({ session, userId, onRegister, registering }: SessionCardPr
             <p className="text-xs text-muted-foreground font-medium mb-1">
               Summary
             </p>
-            <p className="text-sm text-foreground line-clamp-3">
+            <p 
+              ref={summaryRef}
+              onClick={toggleExpand}
+              className={`text-sm text-foreground transition-all duration-300 ease-in-out ${
+                expanded ? '' : 'line-clamp-3'
+              } ${needsExpansion ? 'cursor-pointer' : ''}`}
+            >
               {session.summary}
             </p>
           </div>
         )}
       </CardContent>
+
+      {needsExpansion && (
+        <div className="px-6 pb-2">
+          <button
+            onClick={toggleExpand}
+            className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+          >
+            {expanded ? 'Show less' : 'Show more'}
+          </button>
+        </div>
+      )}
 
       <CardFooter className="pt-3">
         {status === "live" && (
