@@ -3,7 +3,7 @@
 # ICPC Website API Documentation v2
 
 **Base URL**: `http://localhost:5000/api/`  
-**Version**: 2.0.0  
+**Version**: 2.0.1  
 **Authentication**: JWT Bearer Token
 
 ---
@@ -23,24 +23,6 @@
 12. [Health & Status](#health--status)
 
 ---
-
----
-
-## Table of Contents
-1. [Authentication](#authentication)
-2. [User Management](#user-management)
-3. [Contests](#contests)
-4. [Tasks & Submissions](#tasks--submissions)
-5. [Sessions](#sessions)
-6. [Announcements](#announcements)
-7. [Gamification](#gamification)
-8. [Alumni & Blog](#alumni--blog)
-9. [AI Features](#ai-features)
-10. [Other Endpoints](#other-endpoints)
-
----
-
-
 
 ## Authentication
 
