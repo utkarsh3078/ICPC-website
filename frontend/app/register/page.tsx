@@ -50,8 +50,9 @@ export default function RegisterPage() {
       await api.post("/auth/register", values);
       toast.success("Registration successful. Please wait for admin approval.");
       router.push("/login");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Registration failed");
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || "Registration failed");
     }
   }
 

@@ -189,7 +189,7 @@ export async function rejectBlog(blogId: string, reason?: string): Promise<Blog>
 }
 
 // Contests (admin-specific)
-export async function getContestSubmissions(contestId: string): Promise<any[]> {
+export async function getContestSubmissions(contestId: string): Promise<unknown[]> {
   const response = await api.get(`/contests/${contestId}/submissions`);
   return response.data.data || response.data;
 }
@@ -198,7 +198,7 @@ export async function createContest(data: {
   title: string;
   timer: number; // Duration in minutes (required)
   startTime: string; // ISO date string in UTC (required)
-}): Promise<any> {
+}): Promise<unknown> {
   const response = await api.post("/contests", data);
   return response.data.data || response.data;
 }
@@ -218,7 +218,7 @@ export async function addProblemToContest(
     hiddenTestCases?: { input: string; output: string }[];
     testCases?: { input: string; output: string }[]; // Legacy support
   }
-): Promise<any> {
+): Promise<unknown> {
   const response = await api.post(`/contests/${contestId}/problems`, problem);
   return response.data.data || response.data;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import dynamic from "next/dynamic";
 import { cpp } from "@codemirror/lang-cpp";
 import { python } from "@codemirror/lang-python";

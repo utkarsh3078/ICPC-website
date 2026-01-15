@@ -11,16 +11,16 @@ export interface Profile {
   branch: string;
   year: number;
   contact: string;
-  handles: any;
+  handles: Record<string, string>;
 }
 
 export interface Contest {
   id: string;
   title: string;
-  problems: any[] | null;
+  problems: unknown[] | null;
   timer: number; // Duration in minutes
   startTime: string; // ISO date string - scheduled start time
-  results: any[] | null;
+  results: unknown[] | null;
   createdAt: string;
 }
 

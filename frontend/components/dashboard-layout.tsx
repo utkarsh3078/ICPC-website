@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -19,10 +19,13 @@ export function DashboardLayout({ children, requireProfile = true }: DashboardLa
   const router = useRouter();
   
   const [userName, setUserName] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(true);
+  
+  // Compute initial loading state - true until we can verify auth
+  const shouldShowLoading = !hasHydrated || 
+    (hasHydrated && isAuthenticated && requireProfile && hasProfile !== true);
 
-  // Auth check
-  useEffect(() => {
+  // Auth check - handle redirects
+  useLayoutEffect(() => {
     if (!hasHydrated) return;
 
     if (!isAuthenticated) {
@@ -35,8 +38,6 @@ export function DashboardLayout({ children, requireProfile = true }: DashboardLa
       router.push("/profile");
       return;
     }
-
-    setIsLoading(false);
   }, [isAuthenticated, hasHydrated, hasProfile, requireProfile, router]);
 
   // Fetch user name
@@ -56,7 +57,7 @@ export function DashboardLayout({ children, requireProfile = true }: DashboardLa
   }, [isAuthenticated, hasProfile, user?.email]);
 
   // Loading state
-  if (!hasHydrated || isLoading || (requireProfile && hasProfile !== true)) {
+  if (shouldShowLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
         <div className="animate-pulse text-xl">Loading...</div>

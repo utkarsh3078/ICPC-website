@@ -21,13 +21,14 @@ const swrConfig = {
   revalidateOnReconnect: false,   // Don't refetch on network reconnect
   dedupingInterval: STALE_TIME,   // 7 minutes - dedupe identical requests
   errorRetryCount: 2,             // Retry failed requests twice
-  onError: (error: any, key: string) => {
+  onError: (error: unknown) => {
+    const err = error as { response?: { status?: number; data?: { error?: string } }; message?: string };
     // Don't show toast for certain expected errors
-    if (error?.response?.status === 401) {
+    if (err?.response?.status === 401) {
       return; // Auth errors handled elsewhere
     }
     // Show toast on error but don't block UI
-    const message = error?.response?.data?.error || error?.message || "Failed to fetch data";
+    const message = err?.response?.data?.error || err?.message || "Failed to fetch data";
     toast.error(message);
   },
 };

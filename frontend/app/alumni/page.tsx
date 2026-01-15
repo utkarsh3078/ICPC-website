@@ -60,9 +60,10 @@ export default function AlumniDashboardPage() {
     try {
       const data = await getStudentsWithRanks();
       setStudents(data);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       toast.error(
-        error.response?.data?.message || "Failed to fetch students"
+        err.response?.data?.message || "Failed to fetch students"
       );
     } finally {
       setLoading(false);

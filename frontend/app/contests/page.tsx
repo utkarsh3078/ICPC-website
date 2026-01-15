@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useContests, Contest } from "@/lib/hooks/useData";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,10 @@ export default function ContestsPage() {
   // Use SWR hook for contests data
   const { contests, isLoading, error } = useContests();
 
+  // Capture the current time once when the component first mounts using lazy initial state
+  // This is safe because useState's initializer function only runs once
+  const [now] = useState(() => Date.now());
+
   const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
@@ -29,7 +34,6 @@ export default function ContestsPage() {
 
   const getContestStatus = (contest: Contest) => {
     const startTime = new Date(contest.startTime).getTime();
-    const now = Date.now();
 
     if (now < startTime) return "upcoming";
     

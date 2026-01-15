@@ -60,8 +60,9 @@ export default function MyBlogsPage() {
     try {
       await deleteBlog(blogId);
       toast.success("Blog deleted successfully");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to delete blog");
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || "Failed to delete blog");
     }
   };
 
@@ -192,7 +193,7 @@ export default function MyBlogsPage() {
               <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-xl font-semibold mb-2">No blogs yet</h3>
               <p className="text-muted-foreground mb-4">
-                You haven't written any blogs yet. Start sharing your knowledge!
+                You haven&apos;t written any blogs yet. Start sharing your knowledge!
               </p>
               {(user?.role === "STUDENT" || user?.role === "ALUMNI") && (
                 <Link href="/blog/write">

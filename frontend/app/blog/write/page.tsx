@@ -106,8 +106,9 @@ export default function WriteBlogPage() {
       });
       toast.success("Blog submitted for approval!");
       router.push("/blog/my");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to create blog");
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || "Failed to create blog");
     } finally {
       setIsSubmitting(false);
     }
@@ -142,8 +143,8 @@ export default function WriteBlogPage() {
           <div className="text-sm text-blue-200">
             <p className="font-medium mb-1">Approval Required</p>
             <p className="text-blue-300/80">
-              Your blog will be reviewed by an admin before it's published.
-              You'll be notified once it's approved or if changes are requested.
+              Your blog will be reviewed by an admin before it&apos;s published.
+              You&apos;ll be notified once it&apos;s approved or if changes are requested.
             </p>
           </div>
         </div>

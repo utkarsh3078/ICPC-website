@@ -196,9 +196,10 @@ export default function SessionsPage() {
       // Invalidate cache to refresh data
       await invalidateSessions();
       toast.success("Successfully registered for session!");
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } } };
       console.error("Error registering for session:", err);
-      toast.error(err.response?.data?.error || "Failed to register");
+      toast.error(error.response?.data?.error || "Failed to register");
     } finally {
       setRegistering(null);
     }

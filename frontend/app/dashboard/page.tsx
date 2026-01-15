@@ -78,7 +78,7 @@ export default function DashboardPage() {
             Welcome back, {profile?.name || user.email}
           </h1>
           <p className="text-muted-foreground mt-2">
-            Here's what's happening with your competitive programming journey.
+            Here&apos;s what&apos;s happening with your competitive programming journey.
           </p>
         </div>
 

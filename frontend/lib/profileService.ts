@@ -83,9 +83,10 @@ export async function getProfile(): Promise<Profile | null> {
   try {
     const response = await api.get("/profile");
     return response.data.data || null;
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as { response?: { status?: number } };
     // 404 means no profile exists yet
-    if (error.response?.status === 404) {
+    if (err.response?.status === 404) {
       return null;
     }
     throw error;

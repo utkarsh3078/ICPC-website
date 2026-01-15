@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useAuthStore } from "@/store/useAuthStore";
 import { useTaskStore } from "@/store/useTaskStore";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,8 +36,6 @@ import type { Task } from "@/lib/hooks/useData";
 type FilterType = "all" | "available" | "pending" | "completed";
 
 export default function TasksPage() {
-  const user = useAuthStore((state) => state.user);
-
   // Use SWR hooks for tasks and points data
   const { tasks, isLoading } = useTasks();
   const { points: userPoints } = useUserPoints();
@@ -83,10 +80,11 @@ export default function TasksPage() {
       await invalidateTasks();
       toast.success("Solution submitted successfully!");
       handleCloseSubmitModal();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } }; message?: string };
       toast.error(
-        error.response?.data?.error ||
-          error.message ||
+        err.response?.data?.error ||
+          err.message ||
           "Failed to submit solution"
       );
     } finally {

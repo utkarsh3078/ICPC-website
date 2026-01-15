@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { useAuthStore } from "@/store/useAuthStore";
 import { useTaskStore } from "@/store/useTaskStore";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { TaskDetailSkeleton } from "@/components/ui/skeletons";
@@ -76,10 +75,11 @@ export default function TaskDetailPage() {
       await invalidateTask(taskId);
       toast.success("Solution submitted successfully!");
       handleCloseSubmitModal();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } }; message?: string };
       toast.error(
-        error.response?.data?.error ||
-          error.message ||
+        err.response?.data?.error ||
+          err.message ||
           "Failed to submit solution"
       );
     } finally {
@@ -109,7 +109,7 @@ export default function TaskDetailPage() {
                   Task not found
                 </h2>
                 <p className="text-muted-foreground mb-4">
-                  The task you're looking for might not exist or you don't have permission to view it.
+                  The task you&apos;re looking for might not exist or you don&apos;t have permission to view it.
                 </p>
                 <Button variant="outline" onClick={() => router.push("/tasks")}>
                   Back to Tasks

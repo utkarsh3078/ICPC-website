@@ -94,9 +94,10 @@ export default function SessionDetailPage() {
       // Invalidate cache to refresh data
       await invalidateSession(sessionId);
       toast.success("Successfully registered for session!");
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } } };
       console.error("Error registering for session:", err);
-      toast.error(err.response?.data?.error || "Failed to register");
+      toast.error(error.response?.data?.error || "Failed to register");
     } finally {
       setRegistering(false);
     }
@@ -130,7 +131,7 @@ export default function SessionDetailPage() {
                   Session not found
                 </h2>
                 <p className="text-muted-foreground mb-4">
-                  The session you're looking for might not exist or you don't have permission to view it.
+                  The session you&apos;re looking for might not exist or you don&apos;t have permission to view it.
                 </p>
                 <Button variant="outline" onClick={() => router.push("/sessions")}>
                   Back to Sessions
@@ -233,7 +234,7 @@ export default function SessionDetailPage() {
                     {isRegistered ? (
                       <Button variant="secondary" size="lg" className="gap-2" disabled>
                         <CheckCircle className="h-4 w-4" />
-                        You're Registered
+                        You&apos;re Registered
                       </Button>
                     ) : (
                       <Button
