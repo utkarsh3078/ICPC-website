@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Vortex } from "@/components/ui/vortex";
 import { toast } from "sonner";
 import api from "@/lib/axios";
-import { Loader2, CheckCircle2, Clock } from "lucide-react";
+import { Loader2, CheckCircle2, Clock, XCircle } from "lucide-react";
 
 function PendingApprovalContent() {
   const router = useRouter();
@@ -15,6 +15,7 @@ function PendingApprovalContent() {
   const userId = searchParams.get("userId");
 
   const [isApproved, setIsApproved] = useState(false);
+  const [isDenied, setIsDenied] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
 
   useEffect(() => {
@@ -41,8 +42,15 @@ function PendingApprovalContent() {
             router.push("/login");
           }, 3000);
         }
-      } catch (error) {
-        console.error("Error checking approval status:", error);
+      } catch (error: any) {
+        // Check if user was deleted (404 means user doesn't exist)
+        if (error.response?.status === 404) {
+          clearInterval(pollInterval);
+          setIsDenied(true);
+          toast.error("Your account request has been denied");
+        } else {
+          console.error("Error checking approval status:", error);
+        }
       }
     }, 3000);
 
@@ -85,7 +93,11 @@ function PendingApprovalContent() {
       <Card className="w-96">
         <CardHeader>
           <CardTitle className="text-center">
-            {isApproved ? "Approved!" : "Awaiting Approval"}
+            {isApproved
+              ? "Approved!"
+              : isDenied
+              ? "Request Denied"
+              : "Awaiting Approval"}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center space-y-6">
@@ -100,6 +112,22 @@ function PendingApprovalContent() {
                 <p className="text-sm text-muted-foreground">
                   Redirecting to login page...
                 </p>
+              </div>
+            </>
+          ) : isDenied ? (
+            <>
+              <XCircle className="w-16 h-16 text-red-500" />
+              <div className="text-center space-y-3">
+                <p className="text-lg font-semibold">Request Denied</p>
+                <p className="text-sm text-muted-foreground">
+                  Sorry, an administrator has denied your login request.
+                </p>
+                <button
+                  onClick={() => router.push("/register")}
+                  className="mt-4 inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm font-medium"
+                >
+                  Back to Register
+                </button>
               </div>
             </>
           ) : (
