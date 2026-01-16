@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import session from "express-session";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
@@ -22,6 +23,7 @@ import swaggerDocument from "../swagger.json";
 import judgeRoutes from "./routes/judgeRoutes";
 import { errorHandler } from "./utils/errorHandler";
 import { startJobs } from "./jobs/cron";
+import passport from "./config/passport";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -47,6 +49,26 @@ app.use(compression());
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Express session configuration for Passport
+app.use(
+  session({
+    secret:
+      process.env.SESSION_SECRET || process.env.JWT_SECRET || "session-secret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    },
+  })
+);
+
+// Initialize Passport and session
+app.use(passport.initialize());
+app.use(passport.session());
 
 // request logging
 app.use(reqLogger as any);

@@ -1,7 +1,19 @@
+"use client";
+
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
-import { ModeToggle } from "@/components/mode-toggle";
 import { AuroraBackground } from "@/components/ui/aurora-background";
+
+const ModeToggle = dynamic(
+  () =>
+    import("@/components/mode-toggle").then((mod) => ({
+      default: mod.ModeToggle,
+    })),
+  {
+    ssr: false,
+  }
+);
 
 export default function Home() {
   return (

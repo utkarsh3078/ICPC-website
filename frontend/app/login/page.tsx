@@ -22,6 +22,7 @@ import api from "@/lib/axios";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Vortex } from "@/components/ui/vortex";
 import { getProfile } from "@/lib/profileService";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -120,6 +121,19 @@ export default function LoginPage() {
               </Button>
             </form>
           </Form>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with
+              </span>
+            </div>
+          </div>
+
+          <GoogleSignInButton text="Sign in with Google" />
         </CardContent>
       </Card>
     </Vortex>

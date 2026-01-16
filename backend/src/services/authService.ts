@@ -71,6 +71,14 @@ export const login = async (email: string, password: string) => {
   if (!user) {
     throw new Error("Invalid credentials");
   }
+
+  // Check if user has a password (OAuth users don't)
+  if (!user.password) {
+    throw new Error(
+      "This account was created with Google OAuth. Please use Google Sign-In to login."
+    );
+  }
+
   const ok = await bcrypt.compare(password, user.password);
   if (!ok) {
     throw new Error("Invalid credentials");

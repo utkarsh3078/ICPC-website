@@ -27,7 +27,7 @@ export default function Error({
           </div>
         </div>
 
-        <h1 className="text-3xl font-bold mb-3 bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
+        <h1 className="text-3xl font-bold mb-3 bg-linear-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
           Something went wrong!
         </h1>
 

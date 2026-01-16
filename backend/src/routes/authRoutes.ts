@@ -1,5 +1,6 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
+import passport from "passport";
 import * as auth from "../controllers/authController";
 import { isAuthenticated, isAdmin } from "../middleware/auth";
 import { body } from "express-validator";
@@ -28,6 +29,18 @@ router.post(
   auth.login
 );
 router.post("/approve/:id", isAuthenticated, isAdmin, auth.approve);
+
+// Google OAuth routes
+router.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
+
+router.get(
+  "/google/callback",
+  passport.authenticate("google", { failureRedirect: "/login" }),
+  auth.googleCallback
+);
 
 // Admin user management
 router.get("/users", isAuthenticated, isAdmin, auth.listUsers);

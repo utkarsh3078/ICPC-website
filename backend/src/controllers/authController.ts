@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import * as authService from "../services/authService";
+import * as googleAuthService from "../services/googleAuthService";
 import { success, fail } from "../utils/response";
 import { validationResult } from "express-validator";
 
@@ -76,5 +77,26 @@ export const deleteUser = async (req: Request, res: Response) => {
     success(res, result);
   } catch (err: any) {
     fail(res, err.message, 400);
+  }
+};
+
+export const googleCallback = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!user) {
+      return fail(res, "Authentication failed", 401);
+    }
+
+    // Generate JWT token for authenticated user
+    const token = googleAuthService.generateToken(user.id, user.role);
+
+    // Redirect to frontend with token
+    // You can customize this redirect URL based on your frontend setup
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    res.redirect(
+      `${frontendUrl}/auth/callback?token=${token}&userId=${user.id}`
+    );
+  } catch (err: any) {
+    fail(res, err.message, 401);
   }
 };
