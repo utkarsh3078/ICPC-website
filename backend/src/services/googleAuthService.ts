@@ -22,39 +22,45 @@ export const findOrCreateGoogleUser = async (profile: GoogleProfile) => {
   const email = profile.emails[0]?.value || profile._json.email;
   const googleId = profile.id;
 
-  // Try to find existing user by googleId
-  let user = await prisma.user.findUnique({
-    where: { googleId },
-  });
-
-  // If not found by googleId, try to find by email
-  if (!user) {
-    user = await prisma.user.findUnique({
-      where: { email },
+  // Use a transaction to ensure user and profile are created together
+  const user = await prisma.$transaction(async (tx) => {
+    // Try to find existing user by googleId
+    let existingUser = await tx.user.findUnique({
+      where: { googleId },
     });
 
-    // If user exists but doesn't have googleId, link the Google account
-    if (user) {
-      user = await prisma.user.update({
+    // If not found by googleId, try to find by email
+    if (!existingUser) {
+      existingUser = await tx.user.findUnique({
         where: { email },
-        data: {
-          googleId,
-          googleEmail: email,
-        },
       });
-    }
-  }
 
-  // If user doesn't exist, create a new one with Google OAuth
-  if (!user) {
-    user = await prisma.user.create({
+      // If user exists but doesn't have googleId, link the Google account
+      if (existingUser) {
+        existingUser = await tx.user.update({
+          where: { email },
+          data: {
+            googleId,
+            googleEmail: email,
+          },
+        });
+        return existingUser;
+      }
+    }
+
+    if (existingUser) {
+      return existingUser;
+    }
+
+    // If user doesn't exist, create a new one with Google OAuth
+    const newUser = await tx.user.create({
       data: {
         email,
         googleId,
         googleEmail: email,
         password: null, // No password for OAuth users
         role: "STUDENT",
-        approved: true, // Auto-approve Google OAuth users (can be changed)
+        approved: false, // Require admin approval for Google OAuth users
         profile: {
           create: {
             name:
@@ -69,7 +75,9 @@ export const findOrCreateGoogleUser = async (profile: GoogleProfile) => {
         profile: true,
       },
     });
-  }
+
+    return newUser;
+  });
 
   return user;
 };

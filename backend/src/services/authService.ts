@@ -53,6 +53,22 @@ export const getPendingUsers = async () => {
   });
 };
 
+export const getUserApprovalStatus = async (userId: string) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      approved: true,
+    },
+  });
+  if (!user) {
+    throw new Error("User not found");
+  }
+  return user;
+};
+
 export const updateUserRole = async (userId: string, role: string) => {
   return prisma.user.update({
     where: { id: userId },

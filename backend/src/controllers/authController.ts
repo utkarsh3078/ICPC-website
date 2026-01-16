@@ -44,6 +44,25 @@ export const listPendingUsers = async (req: Request, res: Response) => {
   }
 };
 
+export const checkApprovalStatus = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    if (!userId) {
+      return fail(res, "User ID is required", 400);
+    }
+    const user = await authService.getUserApprovalStatus(userId);
+    success(res, {
+      id: user.id,
+      email: user.email,
+      approved: user.approved,
+      role: user.role,
+    });
+  } catch (err: any) {
+    console.error("checkApprovalStatus error:", err);
+    fail(res, err.message, 404);
+  }
+};
+
 export const updateRole = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -87,12 +106,22 @@ export const googleCallback = async (req: Request, res: Response) => {
       return fail(res, "Authentication failed", 401);
     }
 
-    // Generate JWT token for authenticated user
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+
+    // Check if user is approved
+    if (!user.approved) {
+      // Redirect to pending approval page
+      return res.redirect(
+        `${frontendUrl}/auth/pending-approval?email=${encodeURIComponent(
+          user.email
+        )}&userId=${user.id}`
+      );
+    }
+
+    // Generate JWT token for approved user
     const token = googleAuthService.generateToken(user.id, user.role);
 
     // Redirect to frontend with token
-    // You can customize this redirect URL based on your frontend setup
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
     res.redirect(
       `${frontendUrl}/auth/callback?token=${token}&userId=${user.id}`
     );

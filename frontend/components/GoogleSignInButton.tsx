@@ -21,7 +21,7 @@ export function GoogleSignInButton({
 }: GoogleSignInButtonProps) {
   const handleGoogleSignIn = () => {
     const apiUrl =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
     window.location.href = `${apiUrl}/auth/google`;
   };
 

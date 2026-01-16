@@ -28,6 +28,7 @@ router.post(
   [body("email").isEmail(), body("password").exists()],
   auth.login
 );
+router.get("/approval-status/:userId", auth.checkApprovalStatus);
 router.post("/approve/:id", isAuthenticated, isAdmin, auth.approve);
 
 // Google OAuth routes
