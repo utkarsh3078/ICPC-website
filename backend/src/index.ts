@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import compression from "compression";
 import rateLimit from "express-rate-limit";
 import { reqLogger, logger } from "./utils/logger";
 import authRoutes from "./routes/authRoutes";
@@ -14,6 +15,7 @@ import contestRoutes from "./routes/contestRoutes";
 import sessionRoutes from "./routes/sessionRoutes";
 import alumniRoutes from "./routes/alumniRoutes";
 import gamificationRoutes from "./routes/gamificationRoutes";
+import dashboardRoutes from "./routes/dashboardRoutes";
 import path from "path";
 import swaggerUi from "swagger-ui-express";
 import swaggerDocument from "../swagger.json";
@@ -24,7 +26,24 @@ import { startJobs } from "./jobs/cron";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+    },
+  })
+);
+app.use(compression());
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -68,6 +87,7 @@ app.use("/api/contests", contestRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/alumni", alumniRoutes);
 app.use("/api/gamification", gamificationRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 app.use("/api/judge", judgeRoutes);
 

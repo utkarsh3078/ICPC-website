@@ -80,8 +80,9 @@ export default function BlogViewPage() {
       await addComment(blogId, newComment.trim());
       setNewComment("");
       toast.success("Comment added successfully");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to add comment");
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || "Failed to add comment");
     } finally {
       setSubmittingComment(false);
     }
@@ -94,8 +95,9 @@ export default function BlogViewPage() {
       setEditingCommentId(null);
       setEditingCommentContent("");
       toast.success("Comment updated successfully");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to update comment");
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || "Failed to update comment");
     }
   };
 
@@ -104,8 +106,9 @@ export default function BlogViewPage() {
     try {
       await deleteComment(blogId, commentId);
       toast.success("Comment deleted successfully");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to delete comment");
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || "Failed to delete comment");
     }
   };
 
@@ -116,8 +119,9 @@ export default function BlogViewPage() {
       await deleteBlog(blogId);
       toast.success("Blog deleted successfully");
       router.push("/blog");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to delete blog");
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || "Failed to delete blog");
       setDeletingBlog(false);
     }
   };
@@ -149,7 +153,7 @@ export default function BlogViewPage() {
                   {currentBlogError}
                 </h2>
                 <p className="text-muted-foreground mb-4">
-                  The blog you're looking for might not exist or you don't have permission to view it.
+                  The blog you&apos;re looking for might not exist or you don&apos;t have permission to view it.
                 </p>
                 <Link href="/blog">
                   <Button variant="outline">Back to Blogs</Button>

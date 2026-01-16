@@ -37,16 +37,15 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  Profile,
-  Handles,
   getProfile,
   updateProfile,
-  validatePhone,
   validateName,
+  validatePhone,
   BRANCH_OPTIONS,
   YEAR_OPTIONS,
   GRADUATION_YEAR_OPTIONS,
   CP_PLATFORMS,
+  type Handles,
 } from "@/lib/profileService";
 
 export default function ProfilePage() {
@@ -190,10 +189,11 @@ export default function ProfilePage() {
       if (isFirstTime) {
         router.push("/dashboard");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } }; message?: string };
       toast.error(
-        error.response?.data?.error ||
-          error.message ||
+        err.response?.data?.error ||
+          err.message ||
           "Failed to save profile"
       );
     } finally {

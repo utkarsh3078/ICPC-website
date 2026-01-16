@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { SessionDetailSkeleton } from "@/components/ui/skeletons";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,11 +12,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useSession, invalidateSession } from "@/lib/hooks/useData";
 import {
-  getSession,
   registerForSession,
   getSessionStatus,
-  Session,
   SessionStatus,
 } from "@/lib/sessionService";
 import {
@@ -76,31 +76,11 @@ export default function SessionDetailPage() {
 
   const { user, token } = useAuthStore();
   const isAuthenticated = !!token;
-  const hasHydrated = useAuthStore((state) => state._hasHydrated);
 
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [registering, setRegistering] = useState(false);
 
-  useEffect(() => {
-    const fetchSession = async () => {
-      try {
-        setError(null);
-        const data = await getSession(sessionId);
-        setSession(data);
-      } catch (err: any) {
-        console.error("Error fetching session:", err);
-        setError(err.response?.data?.error || "Session not found");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (hasHydrated && isAuthenticated && sessionId) {
-      fetchSession();
-    }
-  }, [hasHydrated, isAuthenticated, sessionId]);
+  // Use SWR hook for session data
+  const { session, isLoading, error } = useSession(sessionId);
 
   const handleRegister = async () => {
     if (!isAuthenticated) {
@@ -110,12 +90,14 @@ export default function SessionDetailPage() {
 
     setRegistering(true);
     try {
-      const updatedSession = await registerForSession(sessionId);
-      setSession(updatedSession);
+      await registerForSession(sessionId);
+      // Invalidate cache to refresh data
+      await invalidateSession(sessionId);
       toast.success("Successfully registered for session!");
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } } };
       console.error("Error registering for session:", err);
-      toast.error(err.response?.data?.error || "Failed to register");
+      toast.error(error.response?.data?.error || "Failed to register");
     } finally {
       setRegistering(false);
     }
@@ -128,12 +110,10 @@ export default function SessionDetailPage() {
   };
 
   // Loading state
-  if (loading) {
+  if (isLoading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <SessionDetailSkeleton />
       </DashboardLayout>
     );
   }
@@ -148,10 +128,10 @@ export default function SessionDetailPage() {
               <CardContent className="py-12 text-center">
                 <AlertCircle className="h-12 w-12 mx-auto text-red-400 mb-4" />
                 <h2 className="text-xl font-semibold text-red-400 mb-2">
-                  {error}
+                  Session not found
                 </h2>
                 <p className="text-muted-foreground mb-4">
-                  The session you're looking for might not exist or you don't have permission to view it.
+                  The session you&apos;re looking for might not exist or you don&apos;t have permission to view it.
                 </p>
                 <Button variant="outline" onClick={() => router.push("/sessions")}>
                   Back to Sessions
@@ -240,18 +220,6 @@ export default function SessionDetailPage() {
                 </div>
               )}
 
-              {/* Summary Section (for ended sessions) */}
-              {status === "ended" && session.summary && (
-                <div className="p-4 bg-muted/50 rounded-lg border border-border">
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    Session Summary
-                  </h3>
-                  <p className="text-muted-foreground whitespace-pre-wrap">
-                    {session.summary}
-                  </p>
-                </div>
-              )}
-
               {/* Action Buttons */}
               <div className="pt-4 border-t border-border">
                 {status === "live" && (
@@ -266,7 +234,7 @@ export default function SessionDetailPage() {
                     {isRegistered ? (
                       <Button variant="secondary" size="lg" className="gap-2" disabled>
                         <CheckCircle className="h-4 w-4" />
-                        You're Registered
+                        You&apos;re Registered
                       </Button>
                     ) : (
                       <Button

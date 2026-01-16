@@ -26,7 +26,7 @@ export interface Contest {
   problems: Problem[] | null;
   timer: number; // Duration in minutes (required)
   startTime: string; // ISO date string - scheduled start time (required)
-  results: any[] | null;
+  results: unknown[] | null;
   createdAt: string;
 }
 
@@ -141,7 +141,7 @@ export async function getSubmission(
   return response.data.data || response.data;
 }
 
-export async function getContestHistory(): Promise<any[]> {
+export async function getContestHistory(): Promise<unknown[]> {
   const response = await api.get("/contests/history/me");
   return response.data.data || response.data;
 }

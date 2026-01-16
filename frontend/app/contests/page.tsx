@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { getContests, Contest } from "@/lib/contestService";
-import { useAuthStore } from "@/store/useAuthStore";
+import { useContests, Contest } from "@/lib/hooks/useData";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,29 +13,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { ContestsPageSkeleton } from "@/components/ui/skeletons";
 
 export default function ContestsPage() {
-  const [contests, setContests] = useState<Contest[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { token } = useAuthStore();
+  // Use SWR hook for contests data
+  const { contests, isLoading, error } = useContests();
 
-  useEffect(() => {
-    if (!token) return;
-
-    async function fetchContests() {
-      try {
-        const data = await getContests();
-        setContests(Array.isArray(data) ? data : []);
-      } catch (err: any) {
-        setError(err.response?.data?.message || "Failed to fetch contests");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchContests();
-  }, [token]);
+  // Capture the current time once when the component first mounts using lazy initial state
+  // This is safe because useState's initializer function only runs once
+  const [now] = useState(() => Date.now());
 
   const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
@@ -49,7 +34,6 @@ export default function ContestsPage() {
 
   const getContestStatus = (contest: Contest) => {
     const startTime = new Date(contest.startTime).getTime();
-    const now = Date.now();
 
     if (now < startTime) return "upcoming";
     
@@ -58,6 +42,14 @@ export default function ContestsPage() {
     
     return "active";
   };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <ContestsPageSkeleton />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -69,27 +61,21 @@ export default function ContestsPage() {
           </p>
         </div>
 
-        {loading && (
-          <div className="text-center py-12">
-            <div className="text-xl animate-pulse">Loading contests...</div>
-          </div>
-        )}
-
         {error && (
           <div className="bg-red-500/20 border border-red-500 rounded-lg p-4 mb-6">
-            {error}
+            Failed to load contests
           </div>
         )}
 
-        {!loading && contests.length === 0 && (
+        {contests.length === 0 && !error && (
           <div className="text-center py-12">
             <p className="text-gray-400 text-lg">No contests available yet.</p>
           </div>
         )}
 
-        {!loading && contests.length > 0 && (
+        {contests.length > 0 && (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {contests.map((contest) => {
+            {contests.map((contest: Contest) => {
               const status = getContestStatus(contest);
               const problemCount = contest.problems?.length || 0;
 

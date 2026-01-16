@@ -122,9 +122,10 @@ export const useBlogStore = create<BlogState>()((set, get) => ({
         selectedTag: tag,
         blogsLoading: false,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       set({
-        blogsError: error.response?.data?.message || "Failed to fetch blogs",
+        blogsError: err.response?.data?.message || "Failed to fetch blogs",
         blogsLoading: false,
       });
     }
@@ -161,10 +162,11 @@ export const useBlogStore = create<BlogState>()((set, get) => ({
     try {
       const blog = await blogService.getBlogById(id);
       set({ currentBlog: blog, currentBlogLoading: false });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       set({
         currentBlogError:
-          error.response?.data?.message || "Failed to fetch blog",
+          err.response?.data?.message || "Failed to fetch blog",
         currentBlogLoading: false,
       });
     }
@@ -183,10 +185,11 @@ export const useBlogStore = create<BlogState>()((set, get) => ({
     try {
       const blogs = await blogService.getMyBlogs();
       set({ myBlogs: blogs, myBlogsLoading: false });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       set({
         myBlogsError:
-          error.response?.data?.message || "Failed to fetch your blogs",
+          err.response?.data?.message || "Failed to fetch your blogs",
         myBlogsLoading: false,
       });
     }
@@ -287,10 +290,11 @@ export const useBlogStore = create<BlogState>()((set, get) => ({
     try {
       const blogs = await blogService.getPendingBlogs();
       set({ pendingBlogs: blogs, pendingBlogsLoading: false });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       set({
         pendingBlogsError:
-          error.response?.data?.message || "Failed to fetch pending blogs",
+          err.response?.data?.message || "Failed to fetch pending blogs",
         pendingBlogsLoading: false,
       });
     }
@@ -321,7 +325,7 @@ export const useBlogStore = create<BlogState>()((set, get) => ({
     try {
       const tags = await blogService.getAllTags();
       set({ tags, tagsLoading: false });
-    } catch (error) {
+    } catch {
       set({ tagsLoading: false });
     }
   },

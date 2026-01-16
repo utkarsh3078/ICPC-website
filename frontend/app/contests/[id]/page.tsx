@@ -22,13 +22,6 @@ import {
 import { useCodePersistence } from "@/lib/hooks/useCodePersistence";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -127,8 +120,9 @@ export default function ContestDetailPage() {
             setTimeRemaining(remaining);
           }
         }
-      } catch (err: any) {
-        setError(err.response?.data?.message || "Failed to fetch contest");
+      } catch (err: unknown) {
+        const error = err as { response?: { data?: { message?: string } } };
+        setError(error.response?.data?.message || "Failed to fetch contest");
       } finally {
         setLoading(false);
       }
@@ -145,7 +139,7 @@ export default function ContestDetailPage() {
       try {
         const data = await getMySubmissions(contestId);
         setSubmissions(Array.isArray(data) ? data : []);
-      } catch (err) {
+      } catch {
         // Submissions might not exist yet, ignore error
       }
     }
@@ -250,9 +244,10 @@ export default function ContestDetailPage() {
       // Refresh submissions
       const data = await getMySubmissions(contestId);
       setSubmissions(Array.isArray(data) ? data : []);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
       setSubmissionError(
-        err.response?.data?.message || "Failed to submit solution"
+        error.response?.data?.message || "Failed to submit solution"
       );
     } finally {
       setSubmitting(false);
@@ -292,13 +287,14 @@ export default function ContestDetailPage() {
       const result = await runCode(contestId, selectedProblemIdx, code, languageId);
       setRunResult(result);
       setLastRunTime(Date.now());
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as { response?: { status?: number; headers?: { "retry-after"?: string }; data?: { message?: string } } };
       // Check for rate limit error
-      if (err.response?.status === 429) {
-        const retryAfter = err.response?.headers?.["retry-after"] || 60;
+      if (error.response?.status === 429) {
+        const retryAfter = error.response?.headers?.["retry-after"] || "60";
         setRunError(`Rate limit exceeded. Try again in ${retryAfter} seconds.`);
       } else {
-        setRunError(err.response?.data?.message || "Failed to run code");
+        setRunError(error.response?.data?.message || "Failed to run code");
       }
     } finally {
       setRunning(false);

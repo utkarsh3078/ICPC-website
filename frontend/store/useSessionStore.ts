@@ -22,10 +22,11 @@ interface UpdateSessionData {
 }
 
 // Helper to extract error message from various error formats
-const getErrorMessage = (err: any, fallback: string): string => {
-  return err.response?.data?.error || 
-         err.response?.data?.message || 
-         err.message || 
+const getErrorMessage = (err: unknown, fallback: string): string => {
+  const error = err as { response?: { data?: { error?: string; message?: string } }; message?: string };
+  return error.response?.data?.error || 
+         error.response?.data?.message || 
+         error.message || 
          fallback;
 };
 
@@ -58,7 +59,7 @@ export const useSessionStore = create<SessionState>((set) => ({
     try {
       const sessions = await getSessions();
       set({ sessions, loading: false });
-    } catch (err: any) {
+    } catch (err: unknown) {
       set({
         error: getErrorMessage(err, "Failed to fetch sessions"),
         loading: false,
@@ -75,7 +76,7 @@ export const useSessionStore = create<SessionState>((set) => ({
         sessions: [newSession, ...state.sessions],
         loading: false,
       }));
-    } catch (err: any) {
+    } catch (err: unknown) {
       set({
         error: getErrorMessage(err, "Failed to create session"),
         loading: false,
@@ -94,7 +95,7 @@ export const useSessionStore = create<SessionState>((set) => ({
         loading: false,
         editingId: null,
       }));
-    } catch (err: any) {
+    } catch (err: unknown) {
       set({
         error: getErrorMessage(err, "Failed to update session"),
         loading: false,
@@ -110,7 +111,7 @@ export const useSessionStore = create<SessionState>((set) => ({
       set((state) => ({
         sessions: state.sessions.filter((s) => s.id !== id),
       }));
-    } catch (err: any) {
+    } catch (err: unknown) {
       set({
         error: getErrorMessage(err, "Failed to delete session"),
       });

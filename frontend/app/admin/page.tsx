@@ -67,6 +67,7 @@ import {
 import { getContests, Contest } from "@/lib/contestService";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useTaskStore } from "@/store/useTaskStore";
+import { useTasks, invalidateTasks } from "@/lib/hooks/useData";
 import {
   Task,
   Submission,
@@ -114,14 +115,15 @@ export default function AdminDashboardPage() {
     setEditingId,
   } = useSessionStore();
 
-  // Task store (Zustand)
+  // Tasks data via SWR
+  const { tasks, isLoading: tasksLoading } = useTasks();
+
+  // Task store (Zustand) - for mutations and admin-only operations
   const {
-    tasks,
     submissions: taskSubmissions,
-    loading: tasksLoading,
     submissionsLoading,
     editingTaskId,
-    fetchTasks,
+    mutationLoading,
     fetchTaskSubmissions,
     createTask,
     updateTask,
@@ -209,6 +211,7 @@ export default function AdminDashboardPage() {
     if (hasHydrated && user?.role === "ADMIN") {
       fetchDataForTab(activeTab);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, hasHydrated, user]);
 
   const fetchDataForTab = async (tab: TabType) => {
@@ -231,11 +234,8 @@ export default function AdminDashboardPage() {
           await fetchSessions();
           break;
         case "tasks":
-          await Promise.all([
-            fetchTasks(),
-            // Also fetch users for assignment dropdown
-            getUsers().then((users) => setUsers(users)),
-          ]);
+          // Tasks are fetched via SWR, just fetch users for assignment dropdown
+          await getUsers().then((users) => setUsers(users));
           break;
         case "announcements":
           const announcementsData = await getAnnouncements();
@@ -263,10 +263,11 @@ export default function AdminDashboardPage() {
       await approveUser(userId);
       showMessage("success", "User approved successfully!");
       fetchDataForTab("users");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        error.response?.data?.message || "Failed to approve user"
+        err.response?.data?.message || "Failed to approve user"
       );
     }
   };
@@ -276,10 +277,11 @@ export default function AdminDashboardPage() {
       await updateUserRole(userId, role);
       showMessage("success", "Role updated successfully!");
       fetchDataForTab("users");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        error.response?.data?.message || "Failed to update role"
+        err.response?.data?.message || "Failed to update role"
       );
     }
   };
@@ -299,10 +301,11 @@ export default function AdminDashboardPage() {
       await deleteUser(userId);
       showMessage("success", "User deleted successfully");
       fetchDataForTab("users");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        error.response?.data?.message || "Failed to delete user"
+        err.response?.data?.message || "Failed to delete user"
       );
     }
   };
@@ -336,10 +339,11 @@ export default function AdminDashboardPage() {
       setContestStartTime("");
       setContestTimer("");
       fetchDataForTab("contests");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        error.response?.data?.message || "Failed to create contest"
+        err.response?.data?.message || "Failed to create contest"
       );
     } finally {
       setLoading(false);
@@ -373,7 +377,7 @@ export default function AdminDashboardPage() {
       }
       setError(null);
       setCount(parsed.length);
-    } catch (e) {
+    } catch {
       setError("Invalid JSON format");
       setCount(0);
     }
@@ -387,7 +391,7 @@ export default function AdminDashboardPage() {
     try {
       const parsed = JSON.parse(value);
       setValue(JSON.stringify(parsed, null, 2));
-    } catch (e) {
+    } catch {
       // Can't format invalid JSON
     }
   };
@@ -454,10 +458,11 @@ export default function AdminDashboardPage() {
       setHiddenTestCasesError(null);
       setHiddenTestCasesCount(0);
       fetchDataForTab("contests");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        error.response?.data?.message || "Failed to add problem"
+        err.response?.data?.message || "Failed to add problem"
       );
     } finally {
       setLoading(false);
@@ -479,8 +484,9 @@ export default function AdminDashboardPage() {
       setSessionDetails("");
       setSessionMeetLink("");
       setSessionDate("");
-    } catch (error: any) {
-      const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message || "Failed to create session";
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string; message?: string } }; message?: string };
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message || "Failed to create session";
       showMessage("error", errorMsg);
     } finally {
       setLoading(false);
@@ -492,10 +498,11 @@ export default function AdminDashboardPage() {
     try {
       await removeSession(sessionId);
       showMessage("success", "Session deleted successfully!");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        error.response?.data?.message || "Failed to delete session"
+        err.response?.data?.message || "Failed to delete session"
       );
     }
   };
@@ -530,10 +537,11 @@ export default function AdminDashboardPage() {
       setEditDetails("");
       setEditMeetLink("");
       setEditDate("");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        error.response?.data?.message || "Failed to update session"
+        err.response?.data?.message || "Failed to update session"
       );
     }
   };
@@ -542,7 +550,7 @@ export default function AdminDashboardPage() {
     try {
       await navigator.clipboard.writeText(meetLink);
       toast.success("Link copied to clipboard!");
-    } catch (error) {
+    } catch {
       toast.error("Failed to copy link");
     }
   };
@@ -562,10 +570,11 @@ export default function AdminDashboardPage() {
       await deleteContest(contestId);
       showMessage("success", "Contest deleted successfully!");
       fetchDataForTab("contests");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        error.response?.data?.message || "Failed to delete contest"
+        err.response?.data?.message || "Failed to delete contest"
       );
     }
   };
@@ -588,10 +597,13 @@ export default function AdminDashboardPage() {
       setTaskDueDate("");
       setTaskAssignmentType("all");
       setSelectedUserIds([]);
-    } catch (error: any) {
+      // Invalidate tasks cache to refetch
+      invalidateTasks();
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } }; message?: string };
       showMessage(
         "error",
-        error.response?.data?.error || error.message || "Failed to create task"
+        err.response?.data?.error || err.message || "Failed to create task"
       );
     } finally {
       setLoading(false);
@@ -607,10 +619,13 @@ export default function AdminDashboardPage() {
         setExpandedTaskId(null);
         clearSubmissions();
       }
-    } catch (error: any) {
+      // Invalidate tasks cache to refetch
+      invalidateTasks();
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } }; message?: string };
       showMessage(
         "error",
-        error.response?.data?.error || error.message || "Failed to delete task"
+        err.response?.data?.error || err.message || "Failed to delete task"
       );
     }
   };
@@ -656,10 +671,13 @@ export default function AdminDashboardPage() {
       });
       showMessage("success", "Task updated successfully!");
       handleCancelEditTask();
-    } catch (error: any) {
+      // Invalidate tasks cache to refetch
+      invalidateTasks();
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } }; message?: string };
       showMessage(
         "error",
-        error.response?.data?.error || error.message || "Failed to update task"
+        err.response?.data?.error || err.message || "Failed to update task"
       );
     }
   };
@@ -677,10 +695,11 @@ export default function AdminDashboardPage() {
       showMessage("success", `Submission verified! ${verifyPoints} points awarded.`);
       setVerifyModalOpen(false);
       setSelectedSubmission(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } }; message?: string };
       showMessage(
         "error",
-        error.response?.data?.error || error.message || "Failed to verify submission"
+        err.response?.data?.error || err.message || "Failed to verify submission"
       );
     }
   };
@@ -690,10 +709,11 @@ export default function AdminDashboardPage() {
     try {
       await rejectSubmission(subId);
       showMessage("success", "Submission rejected.");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } }; message?: string };
       showMessage(
         "error",
-        error.response?.data?.error || error.message || "Failed to reject submission"
+        err.response?.data?.error || err.message || "Failed to reject submission"
       );
     }
   };
@@ -715,10 +735,11 @@ export default function AdminDashboardPage() {
       setAnnouncementContent("");
       setAnnouncementPinned(false);
       fetchDataForTab("announcements");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        error.response?.data?.message || "Failed to create announcement"
+        err.response?.data?.message || "Failed to create announcement"
       );
     } finally {
       setLoading(false);
@@ -749,10 +770,11 @@ export default function AdminDashboardPage() {
       showMessage("success", "Announcement updated successfully!");
       handleCancelEditAnnouncement();
       fetchDataForTab("announcements");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        error.response?.data?.message || "Failed to update announcement"
+        err.response?.data?.message || "Failed to update announcement"
       );
     }
   };
@@ -763,10 +785,11 @@ export default function AdminDashboardPage() {
       await deleteAnnouncement(id);
       showMessage("success", "Announcement deleted successfully!");
       fetchDataForTab("announcements");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        error.response?.data?.message || "Failed to delete announcement"
+        err.response?.data?.message || "Failed to delete announcement"
       );
     }
   };
@@ -776,10 +799,11 @@ export default function AdminDashboardPage() {
       await updateAnnouncement(announcement.id, { pinned: !announcement.pinned });
       showMessage("success", announcement.pinned ? "Announcement unpinned" : "Announcement pinned");
       fetchDataForTab("announcements");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        error.response?.data?.message || "Failed to update announcement"
+        err.response?.data?.message || "Failed to update announcement"
       );
     }
   };
@@ -789,10 +813,11 @@ export default function AdminDashboardPage() {
       await approveBlog(blogId);
       showMessage("success", "Blog approved successfully!");
       fetchDataForTab("blogs");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        error.response?.data?.message || "Failed to approve blog"
+        err.response?.data?.message || "Failed to approve blog"
       );
     }
   };
@@ -804,10 +829,11 @@ export default function AdminDashboardPage() {
       setRejectingBlogId(null);
       setRejectionReason("");
       fetchDataForTab("blogs");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        error.response?.data?.message || "Failed to reject blog"
+        err.response?.data?.message || "Failed to reject blog"
       );
     }
   };
@@ -1700,8 +1726,8 @@ export default function AdminDashboardPage() {
                       )}
                     </div>
                     
-                    <Button type="submit" disabled={loading || tasksLoading} className="w-full">
-                      {loading || tasksLoading ? "Creating..." : "Create Task"}
+                    <Button type="submit" disabled={loading || mutationLoading} className="w-full">
+                      {loading || mutationLoading ? "Creating..." : "Create Task"}
                     </Button>
                   </form>
                 </CardContent>
@@ -1848,12 +1874,12 @@ export default function AdminDashboardPage() {
                                 </div>
                                 
                                 <div className="flex gap-2 pt-2">
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleSaveEditTask(task.id)}
-                                    disabled={!editTaskTitle || tasksLoading}
-                                    className="gap-1"
-                                  >
+                                                <Button
+                                                  size="sm"
+                                                  onClick={() => handleSaveEditTask(task.id)}
+                                                  disabled={!editTaskTitle || mutationLoading}
+                                                  className="gap-1"
+                                                >
                                     <Check className="h-4 w-4" />
                                     Save
                                   </Button>

@@ -176,8 +176,9 @@ export default function EditBlogPage() {
       });
       toast.success("Blog updated and resubmitted for approval!");
       router.push("/blog/my");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to update blog");
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || "Failed to update blog");
     } finally {
       setIsSubmitting(false);
     }
