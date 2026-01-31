@@ -1,5 +1,6 @@
-import prisma from '../models/prismaClient';
-import { Prisma, SubmissionStatus } from '@prisma/client';
+import prisma from "../models/prismaClient";
+import { Prisma, SubmissionStatus } from "@prisma/client";
+import cache from "../utils/cache";
 
 const MAX_SUBMISSIONS_PER_TASK = 2;
 
@@ -32,24 +33,26 @@ export const getAllTasks = async (userId?: string) => {
       submissions: userId
         ? {
             where: { userId },
-            orderBy: { createdAt: 'desc' },
+            orderBy: { createdAt: "desc" },
           }
         : false,
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
   });
 
   return tasks.map((task) => {
     const userSubmissions = userId ? (task.submissions as any[]) : [];
     const submissionCount = userSubmissions.length;
-    
+
     // Check if user can still submit (max 2 submissions, no verified submission)
-    const hasVerified = userSubmissions.some((s) => s.status === 'VERIFIED');
-    const canSubmit = !hasVerified && submissionCount < MAX_SUBMISSIONS_PER_TASK;
+    const hasVerified = userSubmissions.some((s) => s.status === "VERIFIED");
+    const canSubmit =
+      !hasVerified && submissionCount < MAX_SUBMISSIONS_PER_TASK;
 
     // Check if task is assigned to this user (or open to all)
     const assignedTo = task.assignedTo as string[] | null;
-    const isAssignedToUser = !assignedTo || (userId && assignedTo.includes(userId));
+    const isAssignedToUser =
+      !assignedTo || (userId && assignedTo.includes(userId));
 
     return {
       ...task,
@@ -72,23 +75,24 @@ export const getTaskById = async (taskId: string, userId?: string) => {
       submissions: userId
         ? {
             where: { userId },
-            orderBy: { createdAt: 'desc' },
+            orderBy: { createdAt: "desc" },
           }
         : false,
     },
   });
 
   if (!task) {
-    throw new Error('Task not found');
+    throw new Error("Task not found");
   }
 
   const userSubmissions = userId ? (task.submissions as any[]) : [];
   const submissionCount = userSubmissions.length;
-  const hasVerified = userSubmissions.some((s) => s.status === 'VERIFIED');
+  const hasVerified = userSubmissions.some((s) => s.status === "VERIFIED");
   const canSubmit = !hasVerified && submissionCount < MAX_SUBMISSIONS_PER_TASK;
 
   const assignedTo = task.assignedTo as string[] | null;
-  const isAssignedToUser = !assignedTo || (userId && assignedTo.includes(userId));
+  const isAssignedToUser =
+    !assignedTo || (userId && assignedTo.includes(userId));
 
   return {
     ...task,
@@ -108,18 +112,19 @@ export const updateTask = async (
     points?: number;
     assignedTo?: string[] | null;
     dueDate?: Date | null;
-  }
+  },
 ) => {
   const updateData: Prisma.TaskUpdateInput = {};
-  
+
   if (data.title !== undefined) updateData.title = data.title;
   if (data.description !== undefined) updateData.description = data.description;
   if (data.points !== undefined) updateData.points = data.points;
   if (data.dueDate !== undefined) updateData.dueDate = data.dueDate;
   if (data.assignedTo !== undefined) {
-    updateData.assignedTo = data.assignedTo === null || data.assignedTo.length === 0 
-      ? Prisma.JsonNull 
-      : data.assignedTo;
+    updateData.assignedTo =
+      data.assignedTo === null || data.assignedTo.length === 0
+        ? Prisma.JsonNull
+        : data.assignedTo;
   }
 
   return prisma.task.update({
@@ -150,7 +155,7 @@ export const getTaskSubmissions = async (taskId: string) => {
   });
 
   if (!task) {
-    throw new Error('Task not found');
+    throw new Error("Task not found");
   }
 
   const submissions = await prisma.submission.findMany({
@@ -166,47 +171,55 @@ export const getTaskSubmissions = async (taskId: string) => {
         },
       },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
   });
 
   // Add isLate flag based on task dueDate
   return submissions.map((sub) => ({
     ...sub,
-    isLate: task.dueDate ? new Date(sub.createdAt) > new Date(task.dueDate) : false,
+    isLate: task.dueDate
+      ? new Date(sub.createdAt) > new Date(task.dueDate)
+      : false,
   }));
 };
 
 // Submit a solution for a task
-export const submitTask = async (taskId: string, userId: string, link: string) => {
+export const submitTask = async (
+  taskId: string,
+  userId: string,
+  link: string,
+) => {
   // Get task to check assignment and dueDate
   const task = await prisma.task.findUnique({
     where: { id: taskId },
   });
 
   if (!task) {
-    throw new Error('Task not found');
+    throw new Error("Task not found");
   }
 
   // Check if task is assigned to this user (or open to all)
   const assignedTo = task.assignedTo as string[] | null;
   if (assignedTo && !assignedTo.includes(userId)) {
-    throw new Error('This task is not assigned to you');
+    throw new Error("This task is not assigned to you");
   }
 
   // Check existing submissions count
   const existingSubmissions = await prisma.submission.findMany({
     where: { taskId, userId },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
   });
 
   if (existingSubmissions.length >= MAX_SUBMISSIONS_PER_TASK) {
-    throw new Error(`Maximum submissions (${MAX_SUBMISSIONS_PER_TASK}) reached for this task`);
+    throw new Error(
+      `Maximum submissions (${MAX_SUBMISSIONS_PER_TASK}) reached for this task`,
+    );
   }
 
   // Check if already has a verified submission
-  const hasVerified = existingSubmissions.some((s) => s.status === 'VERIFIED');
+  const hasVerified = existingSubmissions.some((s) => s.status === "VERIFIED");
   if (hasVerified) {
-    throw new Error('You already have a verified submission for this task');
+    throw new Error("You already have a verified submission for this task");
   }
 
   // Create the submission with PENDING status
@@ -215,37 +228,46 @@ export const submitTask = async (taskId: string, userId: string, link: string) =
       taskId,
       userId,
       link,
-      status: 'PENDING',
+      status: "PENDING",
       points: 0,
     },
   });
 };
 
 // Verify a submission and award points (admin action)
-export const verifySubmission = async (submissionId: string, customPoints?: number) => {
+export const verifySubmission = async (
+  submissionId: string,
+  customPoints?: number,
+) => {
   const submission = await prisma.submission.findUnique({
     where: { id: submissionId },
     include: { task: true },
   });
 
   if (!submission) {
-    throw new Error('Submission not found');
+    throw new Error("Submission not found");
   }
 
-  if (submission.status === 'VERIFIED') {
-    throw new Error('Submission is already verified');
+  if (submission.status === "VERIFIED") {
+    throw new Error("Submission is already verified");
   }
 
   // Use custom points if provided, otherwise use task's default points
-  const pointsToAward = customPoints !== undefined ? customPoints : submission.task.points;
+  const pointsToAward =
+    customPoints !== undefined ? customPoints : submission.task.points;
 
-  return prisma.submission.update({
+  const result = await prisma.submission.update({
     where: { id: submissionId },
     data: {
-      status: 'VERIFIED',
+      status: "VERIFIED",
       points: pointsToAward,
     },
   });
+
+  // Invalidate leaderboard cache when points are awarded
+  cache.invalidatePattern(/^leaderboard:/);
+
+  return result;
 };
 
 // Reject a submission (admin action)
@@ -255,17 +277,17 @@ export const rejectSubmission = async (submissionId: string) => {
   });
 
   if (!submission) {
-    throw new Error('Submission not found');
+    throw new Error("Submission not found");
   }
 
-  if (submission.status === 'VERIFIED') {
-    throw new Error('Cannot reject a verified submission');
+  if (submission.status === "VERIFIED") {
+    throw new Error("Cannot reject a verified submission");
   }
 
   return prisma.submission.update({
     where: { id: submissionId },
     data: {
-      status: 'REJECTED',
+      status: "REJECTED",
       points: 0,
     },
   });
@@ -285,7 +307,7 @@ export const getUserSubmissions = async (userId: string) => {
         },
       },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
   });
 };
 
@@ -294,7 +316,7 @@ export const getUserPoints = async (userId: string) => {
   const result = await prisma.submission.aggregate({
     where: {
       userId,
-      status: 'VERIFIED',
+      status: "VERIFIED",
     },
     _sum: {
       points: true,

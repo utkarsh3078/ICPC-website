@@ -1,5 +1,6 @@
 import prisma from "../models/prismaClient";
 import * as judge from "./judgeService";
+import submissionEventService from "./submissionEventService";
 
 // Test case result interface
 interface TestCaseResult {
@@ -46,7 +47,7 @@ export const runContestCode = async (
   contestId: string,
   problemIdx: number,
   source: string,
-  language_id: number
+  language_id: number,
 ): Promise<RunCodeResult> => {
   // Get contest and problem
   const contest = await prisma.contest.findUnique({ where: { id: contestId } });
@@ -79,7 +80,7 @@ export const runContestCode = async (
         language_id,
         tc.input,
         tc.output,
-        timeLimit
+        timeLimit,
       );
 
       // Status ID 3 = Accepted
@@ -108,7 +109,8 @@ export const runContestCode = async (
 
       // Check for runtime error (status 11) or other errors
       if (result.status?.id >= 5 && result.status?.id !== 6) {
-        tcResult.error = result.stderr || result.status?.description || "Runtime error";
+        tcResult.error =
+          result.stderr || result.status?.description || "Runtime error";
       }
 
       results.push(tcResult);
@@ -166,7 +168,7 @@ export const submitContestCode = async (
   problemIdx: number,
   userId: string,
   source: string,
-  language_id: number
+  language_id: number,
 ) => {
   // Get contest and problem
   const contest = await prisma.contest.findUnique({ where: { id: contestId } });
@@ -199,7 +201,7 @@ export const submitContestCode = async (
       language_id,
       tc.input,
       tc.output,
-      timeLimit
+      timeLimit,
     );
     if (res.token) {
       tokens.push(res.token);
@@ -233,18 +235,24 @@ export const submitContestCode = async (
 /**
  * Poll pending submissions and update their status
  * Handles both legacy single-token and new multi-token submissions
+ * @returns Object with count of processed submissions
  */
-export const pollPendingSubmissions = async () => {
+export const pollPendingSubmissions = async (): Promise<{
+  processedCount: number;
+}> => {
   const pending = await prisma.contestSubmission.findMany({
     where: { status: "PENDING" },
     take: 20,
   });
 
+  let processedCount = 0;
+
   for (const s of pending) {
     try {
       // Check if this is a multi-token submission (new system) or single-token (legacy)
-      const tokens = s.tokens && s.tokens.length > 0 ? s.tokens : s.token ? [s.token] : [];
-      
+      const tokens =
+        s.tokens && s.tokens.length > 0 ? s.tokens : s.token ? [s.token] : [];
+
       if (tokens.length === 0) continue;
 
       // Fetch results for all tokens
@@ -254,7 +262,7 @@ export const pollPendingSubmissions = async () => {
       let compileError: string | null = null;
 
       // Get test case info from existing result
-      const existingResult = s.result as any || {};
+      const existingResult = (s.result as any) || {};
       const testCaseInfo = existingResult.testCaseInfo || [];
 
       for (let i = 0; i < tokens.length; i++) {
@@ -281,7 +289,7 @@ export const pollPendingSubmissions = async () => {
         }
 
         const statusId = result?.status?.id || 0;
-        
+
         // 1 = In Queue, 2 = Processing
         if (statusId === 1 || statusId === 2) {
           allFinished = false;
@@ -294,7 +302,8 @@ export const pollPendingSubmissions = async () => {
           compileError = result.compile_output || "Compilation error";
         }
 
-        const isHidden = testCaseInfo[i]?.isHidden ?? (i >= (existingResult.sampleCount || 0));
+        const isHidden =
+          testCaseInfo[i]?.isHidden ?? i >= (existingResult.sampleCount || 0);
         const passed = statusId === 3; // Accepted
 
         testCaseResults.push({
@@ -303,7 +312,10 @@ export const pollPendingSubmissions = async () => {
           time: result.time,
           memory: result.memory,
           actual: result.stdout?.trim() || "",
-          error: statusId >= 5 && statusId !== 6 ? (result.stderr || result.status?.description) : undefined,
+          error:
+            statusId >= 5 && statusId !== 6
+              ? result.stderr || result.status?.description
+              : undefined,
           isHidden,
         });
       }
@@ -333,13 +345,13 @@ export const pollPendingSubmissions = async () => {
         const t = parseFloat(r.time);
         return t > max ? t : max;
       }, 0);
-      
+
       const maxMemory = testCaseResults.reduce((max, r) => {
         return r.memory && r.memory > max ? r.memory : max;
       }, 0);
 
       // Update submission with aggregated result
-      await prisma.contestSubmission.update({
+      const updatedSubmission = await prisma.contestSubmission.update({
         where: { id: s.id },
         data: {
           status: finalStatus,
@@ -349,18 +361,29 @@ export const pollPendingSubmissions = async () => {
             passedCount,
             totalCount,
             testCaseResults,
-            firstFailed: firstFailed ? {
-              ...firstFailed,
-              // Don't expose hidden test case details
-              input: firstFailed.isHidden ? undefined : firstFailed.input,
-              expected: firstFailed.isHidden ? undefined : firstFailed.expected,
-            } : null,
+            firstFailed: firstFailed
+              ? {
+                  ...firstFailed,
+                  // Don't expose hidden test case details
+                  input: firstFailed.isHidden ? undefined : firstFailed.input,
+                  expected: firstFailed.isHidden
+                    ? undefined
+                    : firstFailed.expected,
+                }
+              : null,
             compileError,
             time: maxTime > 0 ? maxTime.toFixed(3) : undefined,
             memory: maxMemory > 0 ? maxMemory : undefined,
           },
         },
       });
+
+      // Emit event for real-time updates
+      submissionEventService.emitSubmissionUpdate(
+        s.id,
+        finalStatus,
+        updatedSubmission.result,
+      );
 
       // Append to contest.results for leaderboard
       const contest = await prisma.contest.findUnique({
@@ -383,8 +406,11 @@ export const pollPendingSubmissions = async () => {
         data: { results: resultsArr },
       });
 
+      processedCount++;
     } catch (err) {
       console.error("Polling error for submission", s.id, err);
     }
   }
+
+  return { processedCount };
 };

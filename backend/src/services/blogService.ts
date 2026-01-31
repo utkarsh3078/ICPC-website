@@ -1,40 +1,41 @@
-import prisma from '../models/prismaClient';
-import { BlogStatus } from '@prisma/client';
+import prisma from "../models/prismaClient";
+import { BlogStatus } from "@prisma/client";
+import cache from "../utils/cache";
 
 // Predefined tags for blogs
 export const PREDEFINED_TAGS = [
   // DSA Topics
-  'Arrays',
-  'Strings',
-  'Linked Lists',
-  'Stacks',
-  'Queues',
-  'Trees',
-  'Graphs',
-  'Dynamic Programming',
-  'Greedy',
-  'Backtracking',
-  'Binary Search',
-  'Sorting',
-  'Hashing',
-  'Recursion',
-  'Bit Manipulation',
+  "Arrays",
+  "Strings",
+  "Linked Lists",
+  "Stacks",
+  "Queues",
+  "Trees",
+  "Graphs",
+  "Dynamic Programming",
+  "Greedy",
+  "Backtracking",
+  "Binary Search",
+  "Sorting",
+  "Hashing",
+  "Recursion",
+  "Bit Manipulation",
   // CP Platforms
-  'Codeforces',
-  'LeetCode',
-  'CodeChef',
-  'AtCoder',
+  "Codeforces",
+  "LeetCode",
+  "CodeChef",
+  "AtCoder",
   // ICPC Related
-  'ICPC',
-  'Regional',
-  'Problem Solving',
-  'Contest Strategy',
+  "ICPC",
+  "Regional",
+  "Problem Solving",
+  "Contest Strategy",
   // General
-  'Tutorial',
-  'Experience',
-  'Tips & Tricks',
-  'Interview Prep',
-  'Beginner Friendly',
+  "Tutorial",
+  "Experience",
+  "Tips & Tricks",
+  "Interview Prep",
+  "Beginner Friendly",
 ];
 
 // Author include for consistent responses
@@ -71,7 +72,7 @@ const commentsInclude = {
       },
     },
     orderBy: {
-      createdAt: 'desc' as const,
+      createdAt: "desc" as const,
     },
   },
 };
@@ -87,7 +88,7 @@ const transformAuthor = (author: any) => ({
   id: author.id,
   email: author.email,
   role: author.role,
-  name: author.profile?.name || author.email.split('@')[0],
+  name: author.profile?.name || author.email.split("@")[0],
 });
 
 /**
@@ -96,7 +97,7 @@ const transformAuthor = (author: any) => ({
 const transformCommentUser = (user: any) => ({
   id: user.id,
   email: user.email,
-  name: user.profile?.name || user.email.split('@')[0],
+  name: user.profile?.name || user.email.split("@")[0],
 });
 
 /**
@@ -105,10 +106,11 @@ const transformCommentUser = (user: any) => ({
 const transformBlogResponse = (blog: any) => ({
   ...blog,
   author: transformAuthor(blog.author),
-  comments: blog.comments?.map((comment: any) => ({
-    ...comment,
-    user: transformCommentUser(comment.user),
-  })) || [],
+  comments:
+    blog.comments?.map((comment: any) => ({
+      ...comment,
+      user: transformCommentUser(comment.user),
+    })) || [],
 });
 
 // =====================
@@ -121,14 +123,14 @@ const transformBlogResponse = (blog: any) => ({
 export const getApprovedBlogs = async (
   page: number = 1,
   limit: number = 10,
-  tag?: string | null
+  tag?: string | null,
 ) => {
   const skip = (page - 1) * limit;
-  
+
   const where: any = {
     status: BlogStatus.APPROVED,
   };
-  
+
   if (tag) {
     where.tags = {
       has: tag,
@@ -144,7 +146,7 @@ export const getApprovedBlogs = async (
           select: { comments: true },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       skip,
       take: limit,
     }),
@@ -170,7 +172,11 @@ export const getApprovedBlogs = async (
  * - If approved: anyone can view
  * - If not approved: only author or admin can view
  */
-export const getBlogById = async (id: string, userId?: string, isAdmin: boolean = false) => {
+export const getBlogById = async (
+  id: string,
+  userId?: string,
+  isAdmin: boolean = false,
+) => {
   const blog = await prisma.blog.findUnique({
     where: { id },
     include: {
@@ -183,12 +189,16 @@ export const getBlogById = async (id: string, userId?: string, isAdmin: boolean 
   });
 
   if (!blog) {
-    throw new Error('Blog not found');
+    throw new Error("Blog not found");
   }
 
   // If not approved, only author or admin can view
-  if (blog.status !== BlogStatus.APPROVED && blog.authorId !== userId && !isAdmin) {
-    throw new Error('Blog not found');
+  if (
+    blog.status !== BlogStatus.APPROVED &&
+    blog.authorId !== userId &&
+    !isAdmin
+  ) {
+    throw new Error("Blog not found");
   }
 
   return transformBlogResponse(blog);
@@ -198,24 +208,34 @@ export const getBlogById = async (id: string, userId?: string, isAdmin: boolean 
  * Get all unique tags (predefined + custom used tags)
  */
 export const getAllTags = async () => {
-  const blogs = await prisma.blog.findMany({
-    where: { status: BlogStatus.APPROVED },
-    select: { tags: true },
-  });
+  // Cache tags for 10 minutes - they don't change often
+  const cacheKey = "blog:tags:all";
 
-  // Collect all unique tags from blogs
-  const usedTags = new Set<string>();
-  blogs.forEach((blog) => {
-    blog.tags.forEach((tag) => usedTags.add(tag));
-  });
+  return cache.getOrSet(
+    cacheKey,
+    async () => {
+      // Efficiently collect used tags from all approved blogs in one query
+      const blogsWithTags = await prisma.blog.findMany({
+        where: { status: BlogStatus.APPROVED },
+        select: { tags: true },
+      });
 
-  // Merge predefined with used tags, remove duplicates
-  const allTags = [...new Set([...PREDEFINED_TAGS, ...usedTags])];
-  
-  return {
-    predefined: PREDEFINED_TAGS,
-    all: allTags.sort(),
-  };
+      // Collect all unique tags from blogs
+      const usedTags = new Set<string>();
+      blogsWithTags.forEach((blog) => {
+        blog.tags.forEach((tag) => usedTags.add(tag));
+      });
+
+      // Merge predefined with used tags, remove duplicates
+      const allTags = [...new Set([...PREDEFINED_TAGS, ...usedTags])];
+
+      return {
+        predefined: PREDEFINED_TAGS,
+        all: allTags.sort(),
+      };
+    },
+    10 * 60 * 1000, // Cache for 10 minutes
+  );
 };
 
 // =====================
@@ -234,7 +254,7 @@ export const getMyBlogs = async (userId: string) => {
         select: { comments: true },
       },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
   });
   return blogs.map(transformBlogResponse);
 };
@@ -244,7 +264,7 @@ export const getMyBlogs = async (userId: string) => {
  */
 export const createBlog = async (
   authorId: string,
-  data: { title: string; content: string; tags: string[] }
+  data: { title: string; content: string; tags: string[] },
 ) => {
   const blog = await prisma.blog.create({
     data: {
@@ -256,6 +276,10 @@ export const createBlog = async (
     },
     include: authorInclude,
   });
+
+  // Invalidate tags cache since new tags might be added
+  cache.invalidate("blog:tags:all");
+
   return transformBlogResponse(blog);
 };
 
@@ -266,33 +290,37 @@ export const createBlog = async (
 export const updateBlog = async (
   id: string,
   userId: string,
-  data: { title?: string; content?: string; tags?: string[] }
+  data: { title?: string; content?: string; tags?: string[] },
 ) => {
   const existingBlog = await prisma.blog.findUnique({
     where: { id },
   });
 
   if (!existingBlog) {
-    throw new Error('Blog not found');
+    throw new Error("Blog not found");
   }
 
   if (existingBlog.authorId !== userId) {
-    throw new Error('Not authorized to edit this blog');
+    throw new Error("Not authorized to edit this blog");
   }
 
   if (existingBlog.status === BlogStatus.APPROVED) {
-    throw new Error('Cannot edit an approved blog');
+    throw new Error("Cannot edit an approved blog");
   }
 
   // If rejected, resubmitting resets to pending
-  const newStatus = existingBlog.status === BlogStatus.REJECTED ? BlogStatus.PENDING : existingBlog.status;
+  const newStatus =
+    existingBlog.status === BlogStatus.REJECTED
+      ? BlogStatus.PENDING
+      : existingBlog.status;
 
   const blog = await prisma.blog.update({
     where: { id },
     data: {
       ...data,
       status: newStatus,
-      rejectionReason: newStatus === BlogStatus.PENDING ? null : existingBlog.rejectionReason,
+      rejectionReason:
+        newStatus === BlogStatus.PENDING ? null : existingBlog.rejectionReason,
     },
     include: authorInclude,
   });
@@ -302,17 +330,21 @@ export const updateBlog = async (
 /**
  * Delete a blog (author or admin)
  */
-export const deleteBlog = async (id: string, userId: string, isAdmin: boolean) => {
+export const deleteBlog = async (
+  id: string,
+  userId: string,
+  isAdmin: boolean,
+) => {
   const blog = await prisma.blog.findUnique({
     where: { id },
   });
 
   if (!blog) {
-    throw new Error('Blog not found');
+    throw new Error("Blog not found");
   }
 
   if (blog.authorId !== userId && !isAdmin) {
-    throw new Error('Not authorized to delete this blog');
+    throw new Error("Not authorized to delete this blog");
   }
 
   return prisma.blog.delete({
@@ -327,17 +359,21 @@ export const deleteBlog = async (id: string, userId: string, isAdmin: boolean) =
 /**
  * Add a comment to an approved blog
  */
-export const addComment = async (blogId: string, userId: string, content: string) => {
+export const addComment = async (
+  blogId: string,
+  userId: string,
+  content: string,
+) => {
   const blog = await prisma.blog.findUnique({
     where: { id: blogId },
   });
 
   if (!blog) {
-    throw new Error('Blog not found');
+    throw new Error("Blog not found");
   }
 
   if (blog.status !== BlogStatus.APPROVED) {
-    throw new Error('Cannot comment on unapproved blogs');
+    throw new Error("Cannot comment on unapproved blogs");
   }
 
   const comment = await prisma.comment.create({
@@ -361,7 +397,7 @@ export const addComment = async (blogId: string, userId: string, content: string
       },
     },
   });
-  
+
   return {
     ...comment,
     user: transformCommentUser(comment.user),
@@ -374,18 +410,18 @@ export const addComment = async (blogId: string, userId: string, content: string
 export const editComment = async (
   commentId: string,
   userId: string,
-  content: string
+  content: string,
 ) => {
   const existingComment = await prisma.comment.findUnique({
     where: { id: commentId },
   });
 
   if (!existingComment) {
-    throw new Error('Comment not found');
+    throw new Error("Comment not found");
   }
 
   if (existingComment.userId !== userId) {
-    throw new Error('Not authorized to edit this comment');
+    throw new Error("Not authorized to edit this comment");
   }
 
   const comment = await prisma.comment.update({
@@ -422,18 +458,18 @@ export const editComment = async (
 export const deleteComment = async (
   commentId: string,
   userId: string,
-  isAdmin: boolean
+  isAdmin: boolean,
 ) => {
   const comment = await prisma.comment.findUnique({
     where: { id: commentId },
   });
 
   if (!comment) {
-    throw new Error('Comment not found');
+    throw new Error("Comment not found");
   }
 
   if (comment.userId !== userId && !isAdmin) {
-    throw new Error('Not authorized to delete this comment');
+    throw new Error("Not authorized to delete this comment");
   }
 
   return prisma.comment.delete({
@@ -452,7 +488,7 @@ export const getPendingBlogs = async () => {
   const blogs = await prisma.blog.findMany({
     where: { status: BlogStatus.PENDING },
     include: authorInclude,
-    orderBy: { createdAt: 'asc' }, // Oldest first for fair review
+    orderBy: { createdAt: "asc" }, // Oldest first for fair review
   });
   return blogs.map(transformBlogResponse);
 };
@@ -466,7 +502,7 @@ export const approveBlog = async (id: string) => {
   });
 
   if (!existingBlog) {
-    throw new Error('Blog not found');
+    throw new Error("Blog not found");
   }
 
   const blog = await prisma.blog.update({
@@ -477,6 +513,10 @@ export const approveBlog = async (id: string) => {
     },
     include: authorInclude,
   });
+
+  // Invalidate cache since blog status changed
+  cache.invalidate("blog:tags:all");
+
   return transformBlogResponse(blog);
 };
 
@@ -489,7 +529,7 @@ export const rejectBlog = async (id: string, reason?: string) => {
   });
 
   if (!existingBlog) {
-    throw new Error('Blog not found');
+    throw new Error("Blog not found");
   }
 
   const blog = await prisma.blog.update({

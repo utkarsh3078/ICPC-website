@@ -1,5 +1,6 @@
-import prisma from '../models/prismaClient';
-import badges from '../utils/badges.json';
+import prisma from "../models/prismaClient";
+import badges from "../utils/badges.json";
+import cache from "../utils/cache";
 
 function startOfMonth(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -11,35 +12,60 @@ function startOfSemester(d: Date) {
   return new Date(d.getFullYear(), semStartMonth, 1);
 }
 
-export const leaderboard = async (period: 'month' | 'semester' | 'all' = 'all') => {
-  const now = new Date();
-  let where: any = { status: 'VERIFIED' };
-  if (period === 'month') where.createdAt = { gte: startOfMonth(now) };
-  if (period === 'semester') where.createdAt = { gte: startOfSemester(now) };
+export const leaderboard = async (
+  period: "month" | "semester" | "all" = "all",
+) => {
+  // Cache leaderboard results for 5 minutes (300 seconds) to reduce DB load
+  const cacheKey = `leaderboard:${period}`;
 
-  const rows = await prisma.submission.groupBy({
-    by: ['userId'],
-    where,
-    _sum: { points: true },
-    orderBy: { _sum: { points: 'desc' } },
-    take: 100,
-  });
+  return cache.getOrSet(
+    cacheKey,
+    async () => {
+      const now = new Date();
+      let where: any = { status: "VERIFIED" };
+      if (period === "month") where.createdAt = { gte: startOfMonth(now) };
+      if (period === "semester")
+        where.createdAt = { gte: startOfSemester(now) };
 
-  // enrich with user email/profile
-  const result = await Promise.all(
-    rows.map(async (r, idx) => {
-      const user = await prisma.user.findUnique({ where: { id: r.userId } });
-      const profile = await prisma.profile.findUnique({ where: { userId: r.userId } });
-      return {
-        position: idx + 1,
-        userId: r.userId,
-        email: user?.email,
-        name: profile?.name || null,
-        points: r._sum.points || 0,
-      };
-    })
+      const rows = await prisma.submission.groupBy({
+        by: ["userId"],
+        where,
+        _sum: { points: true },
+        orderBy: { _sum: { points: "desc" } },
+        take: 100,
+      });
+
+      // Batch fetch all users and profiles in single queries (avoid N+1)
+      const userIds = rows.map((r) => r.userId);
+      const users = await prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, email: true },
+      });
+      const profiles = await prisma.profile.findMany({
+        where: { userId: { in: userIds } },
+        select: { userId: true, name: true },
+      });
+
+      // Create maps for O(1) lookups
+      const userMap = new Map(users.map((u) => [u.id, u]));
+      const profileMap = new Map(profiles.map((p) => [p.userId, p]));
+
+      // Combine data
+      const result = rows.map((r, idx) => {
+        const user = userMap.get(r.userId);
+        const profile = profileMap.get(r.userId);
+        return {
+          position: idx + 1,
+          userId: r.userId,
+          email: user?.email,
+          name: profile?.name || null,
+          points: r._sum.points || 0,
+        };
+      });
+      return result;
+    },
+    5 * 60 * 1000, // Cache for 5 minutes
   );
-  return result;
 };
 
 export const listBadges = async () => {
@@ -48,17 +74,21 @@ export const listBadges = async () => {
 };
 
 export const earnedBadgesForUser = async (userId: string) => {
-  // simple implementation: check first_submit and basic leaderboard membership
-  const subsCount = await prisma.submission.count({ where: { userId, status: 'VERIFIED' } });
+  // Fetch all required data in parallel to avoid multiple queries in loop
+  const [subsCount, board] = await Promise.all([
+    prisma.submission.count({ where: { userId, status: "VERIFIED" } }),
+    leaderboard("month"), // Reuse optimized leaderboard function
+  ]);
+
   const earned: any[] = [];
   const rules: any[] = badges as any;
+
   for (const r of rules) {
     const rule = r.rule;
-    if (rule.type === 'submission_count') {
+    if (rule.type === "submission_count") {
       if (subsCount >= (rule.min || 1)) earned.push(r);
     }
-    if (rule.type === 'leaderboard_position' && rule.period === 'month') {
-      const board = await leaderboard('month');
+    if (rule.type === "leaderboard_position" && rule.period === "month") {
       const pos = board.findIndex((b: any) => b.userId === userId);
       if (pos >= 0 && pos + 1 <= rule.position) earned.push(r);
     }

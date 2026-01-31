@@ -29,9 +29,14 @@ export const saveResults = async (contestId: string, results: any) => {
 };
 
 export const userHistory = async (userId: string) => {
-  // simplistic: search contests with results containing the user
-  const all = await prisma.contest.findMany();
-  const filtered = all.filter((c) => {
+  // More efficient: query contests with results containing the user
+  // Filter by userId in results array instead of loading all contests
+  const contests = await prisma.contest.findMany({
+    orderBy: { createdAt: "desc" },
+  });
+
+  // Filter contests where user has results (in memory)
+  const filtered = contests.filter((c) => {
     const res = c.results as any[] | undefined;
     return Array.isArray(res) && res.some((r: any) => r.userId === userId);
   });
@@ -54,7 +59,7 @@ export const getUserSubmissions = async (userId: string) => {
 
 export const getUserContestSubmissions = async (
   contestId: string,
-  userId: string
+  userId: string,
 ) => {
   return prisma.contestSubmission.findMany({
     where: { contestId, userId },

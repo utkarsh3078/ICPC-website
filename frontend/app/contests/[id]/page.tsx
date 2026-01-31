@@ -66,7 +66,7 @@ export default function ContestDetailPage() {
   // Get default code template for current language
   const defaultCode = useMemo(
     () => CODE_TEMPLATES[languageId] || "",
-    [languageId]
+    [languageId],
   );
 
   // Code persistence hook
@@ -75,7 +75,7 @@ export default function ContestDetailPage() {
     contestEndTime,
     selectedProblemIdx,
     languageId,
-    defaultCode
+    defaultCode,
   );
 
   // Fetch contest data
@@ -100,7 +100,7 @@ export default function ContestDetailPage() {
 
         // Calculate contest status using startTime
         const now = Date.now();
-        
+
         if (now < startTime) {
           // Contest hasn't started yet
           setContestStarted(false);
@@ -109,7 +109,7 @@ export default function ContestDetailPage() {
           // Contest has started
           setContestStarted(true);
           setTimeUntilStart(null);
-          
+
           // Calculate time remaining until end
           const remaining = endTime - now;
 
@@ -147,11 +147,11 @@ export default function ContestDetailPage() {
     fetchSubmissions();
 
     // Only poll if there are pending submissions
-    const hasPending = submissions.some(s => s.status === "PENDING");
+    const hasPending = submissions.some((s) => s.status === "PENDING");
     if (!hasPending) return;
 
-    // Poll for submission updates every 10 seconds
-    const interval = setInterval(fetchSubmissions, 10000);
+    // Poll for submission updates every 5 seconds (was 10 seconds)
+    const interval = setInterval(fetchSubmissions, 5000);
     return () => clearInterval(interval);
   }, [contestId, token, submissions]);
 
@@ -199,13 +199,22 @@ export default function ContestDetailPage() {
   // Load saved code when problem or language changes
   useEffect(() => {
     if (!contestId || !contestEndTime || loading) return;
-    
+
     // Don't load if contest hasn't started or has ended
     if (!contestStarted || contestEnded) return;
 
     const savedCode = loadCode();
     setCode(savedCode);
-  }, [contestId, contestEndTime, selectedProblemIdx, languageId, contestStarted, contestEnded, loading, loadCode]);
+  }, [
+    contestId,
+    contestEndTime,
+    selectedProblemIdx,
+    languageId,
+    contestStarted,
+    contestEnded,
+    loading,
+    loadCode,
+  ]);
 
   // Save code on changes (debounced via hook)
   const handleCodeChange = useCallback(
@@ -214,7 +223,7 @@ export default function ContestDetailPage() {
       // Save to localStorage (debounced in hook)
       saveCode(newCode);
     },
-    [saveCode]
+    [saveCode],
   );
 
   // Handle language change - load saved code for new language
@@ -252,7 +261,7 @@ export default function ContestDetailPage() {
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       setSubmissionError(
-        error.response?.data?.message || "Failed to submit solution"
+        error.response?.data?.message || "Failed to submit solution",
       );
     } finally {
       setSubmitting(false);
@@ -279,7 +288,9 @@ export default function ContestDetailPage() {
     // Check cooldown
     const now = Date.now();
     if (now - lastRunTime < RUN_COOLDOWN_MS) {
-      const remaining = Math.ceil((RUN_COOLDOWN_MS - (now - lastRunTime)) / 1000);
+      const remaining = Math.ceil(
+        (RUN_COOLDOWN_MS - (now - lastRunTime)) / 1000,
+      );
       setRunError(`Please wait ${remaining} seconds before running again`);
       return;
     }
@@ -289,11 +300,22 @@ export default function ContestDetailPage() {
     setRunResult(null);
 
     try {
-      const result = await runCode(contestId, selectedProblemIdx, code, languageId);
+      const result = await runCode(
+        contestId,
+        selectedProblemIdx,
+        code,
+        languageId,
+      );
       setRunResult(result);
       setLastRunTime(Date.now());
     } catch (err: unknown) {
-      const error = err as { response?: { status?: number; headers?: { "retry-after"?: string }; data?: { message?: string } } };
+      const error = err as {
+        response?: {
+          status?: number;
+          headers?: { "retry-after"?: string };
+          data?: { message?: string };
+        };
+      };
       // Check for rate limit error
       if (error.response?.status === 429) {
         const retryAfter = error.response?.headers?.["retry-after"] || "60";
@@ -396,7 +418,7 @@ export default function ContestDetailPage() {
   const problems = contest.problems || [];
   const currentProblem: Problem | null = problems[selectedProblemIdx] || null;
   const problemSubmissions = submissions.filter(
-    (s) => s.problemIdx === selectedProblemIdx
+    (s) => s.problemIdx === selectedProblemIdx,
   );
 
   // Show countdown screen if contest hasn't started
@@ -481,8 +503,8 @@ export default function ContestDetailPage() {
               contestEnded
                 ? "bg-red-500/20 text-red-400"
                 : timeRemaining && timeRemaining < 300000
-                ? "bg-yellow-500/20 text-yellow-400"
-                : "bg-green-500/20 text-green-400"
+                  ? "bg-yellow-500/20 text-yellow-400"
+                  : "bg-green-500/20 text-green-400"
             }`}
           >
             {contestEnded
@@ -504,10 +526,10 @@ export default function ContestDetailPage() {
                 const hasAccepted = submissions.some(
                   (s) =>
                     s.problemIdx === idx &&
-                    s.status?.toLowerCase().includes("accepted")
+                    s.status?.toLowerCase().includes("accepted"),
                 );
                 const hasSubmission = submissions.some(
-                  (s) => s.problemIdx === idx
+                  (s) => s.problemIdx === idx,
                 );
 
                 return (
@@ -525,8 +547,8 @@ export default function ContestDetailPage() {
                         hasAccepted
                           ? "bg-green-400"
                           : hasSubmission
-                          ? "bg-yellow-400"
-                          : "bg-gray-600"
+                            ? "bg-yellow-400"
+                            : "bg-gray-600"
                       }`}
                     />
                     <span className="truncate">
@@ -582,7 +604,7 @@ export default function ContestDetailPage() {
                   {currentProblem.difficulty && (
                     <span
                       className={`px-2 py-1 text-xs font-medium rounded border ${getDifficultyColor(
-                        currentProblem.difficulty
+                        currentProblem.difficulty,
                       )}`}
                     >
                       {currentProblem.difficulty}
@@ -630,34 +652,41 @@ export default function ContestDetailPage() {
 
                   {/* Sample Test Cases */}
                   {(() => {
-                    const sampleTCs = currentProblem.sampleTestCases || currentProblem.testCases || [];
-                    return sampleTCs.length > 0 && (
-                      <div className="mt-6">
-                        <h3 className="text-lg font-semibold mb-3">Examples</h3>
-                        {sampleTCs.map((tc, idx) => (
-                          <div
-                            key={idx}
-                            className="mb-4 bg-gray-800/50 rounded-lg p-4"
-                          >
-                            <div className="mb-2">
-                              <span className="text-sm text-gray-400">
-                                Input:
-                              </span>
-                              <pre className="mt-1 p-2 bg-gray-900 rounded text-sm overflow-x-auto">
-                                {tc.input}
-                              </pre>
+                    const sampleTCs =
+                      currentProblem.sampleTestCases ||
+                      currentProblem.testCases ||
+                      [];
+                    return (
+                      sampleTCs.length > 0 && (
+                        <div className="mt-6">
+                          <h3 className="text-lg font-semibold mb-3">
+                            Examples
+                          </h3>
+                          {sampleTCs.map((tc, idx) => (
+                            <div
+                              key={idx}
+                              className="mb-4 bg-gray-800/50 rounded-lg p-4"
+                            >
+                              <div className="mb-2">
+                                <span className="text-sm text-gray-400">
+                                  Input:
+                                </span>
+                                <pre className="mt-1 p-2 bg-gray-900 rounded text-sm overflow-x-auto">
+                                  {tc.input}
+                                </pre>
+                              </div>
+                              <div>
+                                <span className="text-sm text-gray-400">
+                                  Output:
+                                </span>
+                                <pre className="mt-1 p-2 bg-gray-900 rounded text-sm overflow-x-auto">
+                                  {tc.output}
+                                </pre>
+                              </div>
                             </div>
-                            <div>
-                              <span className="text-sm text-gray-400">
-                                Output:
-                              </span>
-                              <pre className="mt-1 p-2 bg-gray-900 rounded text-sm overflow-x-auto">
-                                {tc.output}
-                              </pre>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      )
                     );
                   })()}
                 </div>
@@ -728,12 +757,17 @@ export default function ContestDetailPage() {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     {runResult.compileError ? (
-                      <span className="text-orange-400 font-medium">Compilation Error</span>
+                      <span className="text-orange-400 font-medium">
+                        Compilation Error
+                      </span>
                     ) : runResult.allPassed ? (
-                      <span className="text-green-400 font-medium">All Sample Tests Passed</span>
+                      <span className="text-green-400 font-medium">
+                        All Sample Tests Passed
+                      </span>
                     ) : (
                       <span className="text-red-400 font-medium">
-                        {runResult.passedCount}/{runResult.totalCount} Sample Tests Passed
+                        {runResult.passedCount}/{runResult.totalCount} Sample
+                        Tests Passed
                       </span>
                     )}
                   </div>
@@ -758,7 +792,7 @@ export default function ContestDetailPage() {
                     <div className="text-sm text-gray-400">
                       Failed Test Case #{runResult.firstFailed.index + 1}
                     </div>
-                    
+
                     {runResult.firstFailed.error ? (
                       <div className="p-2 bg-gray-900 rounded">
                         <div className="text-xs text-gray-500 mb-1">Error:</div>
@@ -770,20 +804,26 @@ export default function ContestDetailPage() {
                       <>
                         <div className="grid grid-cols-1 gap-2">
                           <div className="p-2 bg-gray-900 rounded">
-                            <div className="text-xs text-gray-500 mb-1">Input:</div>
+                            <div className="text-xs text-gray-500 mb-1">
+                              Input:
+                            </div>
                             <pre className="text-gray-300 text-xs overflow-x-auto whitespace-pre-wrap">
                               {runResult.firstFailed.input || "(hidden)"}
                             </pre>
                           </div>
                           <div className="grid grid-cols-2 gap-2">
                             <div className="p-2 bg-gray-900 rounded">
-                              <div className="text-xs text-gray-500 mb-1">Expected:</div>
+                              <div className="text-xs text-gray-500 mb-1">
+                                Expected:
+                              </div>
                               <pre className="text-green-400 text-xs overflow-x-auto whitespace-pre-wrap">
                                 {runResult.firstFailed.expected || "(hidden)"}
                               </pre>
                             </div>
                             <div className="p-2 bg-gray-900 rounded">
-                              <div className="text-xs text-gray-500 mb-1">Actual:</div>
+                              <div className="text-xs text-gray-500 mb-1">
+                                Actual:
+                              </div>
                               <pre className="text-red-400 text-xs overflow-x-auto whitespace-pre-wrap">
                                 {runResult.firstFailed.actual || "(no output)"}
                               </pre>
@@ -796,12 +836,15 @@ export default function ContestDetailPage() {
                 )}
 
                 {/* Execution Stats */}
-                {!runResult.compileError && (runResult.time || runResult.memory) && (
-                  <div className="mt-2 text-xs text-gray-500 flex gap-4">
-                    {runResult.time && <span>Time: {runResult.time}s</span>}
-                    {runResult.memory && <span>Memory: {runResult.memory} KB</span>}
-                  </div>
-                )}
+                {!runResult.compileError &&
+                  (runResult.time || runResult.memory) && (
+                    <div className="mt-2 text-xs text-gray-500 flex gap-4">
+                      {runResult.time && <span>Time: {runResult.time}s</span>}
+                      {runResult.memory && (
+                        <span>Memory: {runResult.memory} KB</span>
+                      )}
+                    </div>
+                  )}
               </div>
             )}
 
@@ -826,14 +869,16 @@ export default function ContestDetailPage() {
                   <div className="flex items-center justify-between">
                     <div
                       className={`font-medium ${getStatusColor(
-                        problemSubmissions[0].status
+                        problemSubmissions[0].status,
                       )}`}
                     >
                       {problemSubmissions[0].status || "Pending..."}
                     </div>
-                    {problemSubmissions[0].result?.passedCount !== undefined && (
+                    {problemSubmissions[0].result?.passedCount !==
+                      undefined && (
                       <div className="text-sm text-gray-400">
-                        {problemSubmissions[0].result.passedCount}/{problemSubmissions[0].result.totalCount} tests passed
+                        {problemSubmissions[0].result.passedCount}/
+                        {problemSubmissions[0].result.totalCount} tests passed
                       </div>
                     )}
                   </div>
@@ -856,18 +901,21 @@ export default function ContestDetailPage() {
                       {problemSubmissions[0].result.compileError}
                     </pre>
                   )}
-                  {problemSubmissions[0].result?.firstFailed && !problemSubmissions[0].result.firstFailed.isHidden && (
-                    <div className="mt-2 text-xs">
-                      <div className="text-gray-500 mb-1">
-                        First failed: Test #{(problemSubmissions[0].result.firstFailed.index || 0) + 1}
+                  {problemSubmissions[0].result?.firstFailed &&
+                    !problemSubmissions[0].result.firstFailed.isHidden && (
+                      <div className="mt-2 text-xs">
+                        <div className="text-gray-500 mb-1">
+                          First failed: Test #
+                          {(problemSubmissions[0].result.firstFailed.index ||
+                            0) + 1}
+                        </div>
+                        {problemSubmissions[0].result.firstFailed.error && (
+                          <pre className="p-2 bg-gray-900 rounded text-red-400 overflow-x-auto">
+                            {problemSubmissions[0].result.firstFailed.error}
+                          </pre>
+                        )}
                       </div>
-                      {problemSubmissions[0].result.firstFailed.error && (
-                        <pre className="p-2 bg-gray-900 rounded text-red-400 overflow-x-auto">
-                          {problemSubmissions[0].result.firstFailed.error}
-                        </pre>
-                      )}
-                    </div>
-                  )}
+                    )}
                 </div>
               </div>
             )}
